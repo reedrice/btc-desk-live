@@ -3,3 +3,4 @@
 *.log
 *.pid
 *.lock
+.firebase_secret
