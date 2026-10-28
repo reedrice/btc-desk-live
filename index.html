@@ -334,8 +334,8 @@ function pmWS(){try{const w=new WebSocket('wss://ws-live-data.polymarket.com');P
 pmWS();
 const PMLEN={'5m':300,'15m':900};
 async function pmRoll(k){const L=PMLEN[k],now=Date.now()/1000,s=Math.floor(now/L)*L,S=PM.st[k]||(PM.st[k]={});
-  if(S.start!==s){S.start=s;S.end=s+L;S.tok=null;S.up=null;S.ptb=null;S.slug=`btc-updown-${k}-${s}`;
-    try{const r=await fetch('https://gamma-api.polymarket.com/events?slug='+S.slug),j=await r.json(),m=j[0].markets[0];const ids=JSON.parse(m.clobTokenIds),oc=JSON.parse(m.outcomes);S.tok=ids[oc.indexOf('Up')<0?0:oc.indexOf('Up')];const pb=(j[0].eventMetadata||{}).priceToBeat;if(pb)S.ptb=pb}catch(e){}}
+  if(S.start!==s){S.start=s;S.end=s+L;S.tok=null;S.up=null;S.ptb=null;S.src=null;S.slug=`btc-updown-${k}-${s}`;
+    try{const r=await fetch('https://gamma-api.polymarket.com/events?slug='+S.slug),j=await r.json(),m=j[0].markets[0];const ids=JSON.parse(m.clobTokenIds),oc=JSON.parse(m.outcomes);S.tok=ids[oc.indexOf('Up')<0?0:oc.indexOf('Up')];const pb=(j[0].eventMetadata||{}).priceToBeat;if(pb){S.ptb=pb;S.src='gamma'}}catch(e){}}
   if(S.ptb==null){const h=PM.buf.find(q=>Math.abs(q[0]-S.start)<0.6);if(h){S.ptb=h[1];S.src='Chainlink at window start'}}
   if(S.tok){try{const r=await fetch('https://clob.polymarket.com/midpoint?token_id='+S.tok),j=await r.json();if(j.mid!=null)S.up=+j.mid}catch(e){}}}
 setInterval(()=>['5m','15m'].forEach(k=>{if(document.querySelector('.pmc[data-k="'+k+'"]'))pmRoll(k)}),4000);
@@ -346,7 +346,7 @@ function pmEl(k){const e=document.createElement('div');e.className='pmc';e.datas
 function pmMount(){document.querySelectorAll('section.desk, section.cmp').forEach(sec=>{if(sec.querySelector('.pmc'))return;const k=(sec.querySelector('.x-dn')||{}).textContent||'';if(!PMLEN[k])return;const e=pmEl(k);
   if(sec.classList.contains('cmp')){const t=sec.querySelector('.ctot');t?t.after(e):sec.appendChild(e)}else{const st=sec.querySelector('.stage');st?st.after(e):sec.appendChild(e)}})}
 function pmDraw(){pmMount();const now=Date.now()/1000;document.querySelectorAll('.pmc').forEach(e=>{const k=e.dataset.k,S=PM.st[k]||{},cv=e.querySelector('.pm-cv');if(!S.start)return;
-  let ptb=S.ptb;if(ptb==null){const d=PM.dd[k];const t=d&&d.tracker;if(t&&t.ptb!=null)ptb=t.ptb}
+  let ptb=S.ptb;{const d=PM.dd[k]||{},m=d.pm,t=d.tracker;if(S.src!=='gamma'&&m&&m.ptb!=null&&m.slug===S.slug)ptb=m.ptb;else if(ptb==null&&t&&t.ptb!=null&&t.slug===S.slug)ptb=t.ptb}
   const pts=PM.buf.filter(q=>q[0]>=S.start-2&&q[0]<=S.end),cur=PM.buf.length?PM.buf[PM.buf.length-1][1]:null;
   e.querySelector('.pm-ptb').textContent=ptb!=null?pmUsd(ptb):'—';const ce=e.querySelector('.pm-cur');ce.textContent=cur!=null?pmUsd(cur):'—';
   const dif=cur!=null&&ptb!=null?cur-ptb:null,up=dif!=null&&dif>=0;ce.className='pm-cur '+(dif==null?'':up?'g':'r');

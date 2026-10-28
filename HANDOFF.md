@@ -49,3 +49,9 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - v17b: settling ring text = countdown to end_ts+settle_lag_s (~Nm if >=60s, m:ss under), then +m:ss overdue (removed Math.max clamp).
 - v17: Polymarket-mirror chart (.pmc) per desk, client-only: ws-live-data.polymarket.com crypto_prices_chainlink btc/usd; gamma events?slug (priceToBeat, token ids, 1/window); clob midpoint every 4s. PTB fallback: gamma -> stream point at window start -> tracker.ptb. Mounted after .stage (mobile/narrow, margin-top 84px clears absolute .tot); >=1480px absolute in blank right column; cmp view after .ctot. Zero Firebase/GitHub/AI usage. Backup .bak17.
 
+
+## v18 (2026-10-28 04:32 CDT)
+- neon_api adds pm={slug,ptb,src} per desk (ptb = current.json spot_open_crypto_price_feed = Polymarket open price, else price_to_beat_twap60). ~80 bytes/desk in the pusher blob.
+- Chart PTB order: gamma priceToBeat -> pm.ptb (slug must match current window) -> Chainlink stream point at start -> tracker.ptb.
+- Pusher + watchdog were found dead since 04:04 CDT; restarted with nohup ./watchdog.sh.
+- Ladder (v16) re-verified: belt 218-236px, tag centers 226-230 at 1500 and 390 (stage layout 1140).

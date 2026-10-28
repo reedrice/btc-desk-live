@@ -51,6 +51,10 @@ def build_neon(desk="5m"):
                    slug=cur.get("slug"), seconds_remaining=_num(cur.get("seconds_remaining")),
                    start=_ts(cur.get("start_utc")), end=_ts(cur.get("end_utc")), leading=cur.get("leading_side"),
                    leading_ask=_num(cur.get("leading_ask")))
+    # --- pm: current window price-to-beat for the chart (Polymarket open price, else self TWAP60) ---
+    _op = _num(cur.get("spot_open_crypto_price_feed")); _tw = _num(cur.get("price_to_beat_twap60")) or _num(cur.get("self_twap60_at_start"))
+    pm = dict(slug=cur.get("slug"), ptb=round(_op if _op is not None else _tw, 2) if (_op is not None or _tw is not None) else None,
+              src="open" if _op is not None else ("twap60" if _tw is not None else None))
     # --- analyst: p(lead holds) = edge.p_hold if present, else derived from lean.p_up for the lean side ---
     lean = ac.get("lean") or {}; edge = ac.get("edge") or {}; pu = _num(lean.get("p_up"))
     ph = _num(edge.get("p_hold"))
@@ -109,7 +113,7 @@ def build_neon(desk="5m"):
     W = 900 if desk == "15m" else 300
     open_positions = _positions(d, desk, W, now, cur, recs, sett, summ, open_c)
     m = risk.get("metrics") or {}; ru = risk.get("rules") or {}
-    return dict(desk_total=desk_total, desk=desk, now=now, bots=bots, tracker=tracker, analyst=analyst, predictor=pred, open=open_c, open_positions=open_positions,
+    return dict(desk_total=desk_total, desk=desk, now=now, bots=bots, tracker=tracker, pm=pm, analyst=analyst, predictor=pred, open=open_c, open_positions=open_positions,
         risk=dict(status=risk.get("status"), reason=risk.get("reason"), loss_streak=m.get("current_loss_streak"),
                   max_losses=ru.get("max_consecutive_losses"), red_days=m.get("consecutive_red_days"),
                   max_red=ru.get("max_consecutive_red_days"), accuracy=m.get("accuracy")),
