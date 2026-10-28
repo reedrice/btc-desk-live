@@ -185,8 +185,8 @@ function tickCD(){const now=Date.now()/1000;document.querySelectorAll('.bet[data
   c.textContent=t;c.className='pl cd '+cls;c.title=t})}
 setInterval(tickCD,1000);
 function renderCmp(e,d){const t=d.tracker||{},p=d.predictor||{},r=d.risk||{},o=d.output||{},n=(o.wins||0)+(o.losses||0);
-  const dt=d.desk=='15m'&&d.desk_total?d.desk_total:null,bp=dt?dt.pnl:o.pnl; // v9: 15m big number = desk-wide (v3+v4)
-  const tv=$(e,'tot');tv.textContent=money(bp)+(dt?` desk-wide · v4 ${money(o.pnl)}`:'');tv.className='ctot x-tot '+(bp==null?'':bp>=0?'pos':'neg');
+  const dt=d.desk_total||null,bp=dt?dt.pnl:o.pnl; // v11: both desks = one total from all scored settlements (netted per slug)
+  const tv=$(e,'tot');tv.textContent=money(bp);tv.className='ctot x-tot '+(bp==null?'':bp>=0?'pos':'neg');
   set(e,'wl',o.wins!=null?`${o.wins}W / ${o.losses}L · ${n?(o.wins/n*100).toFixed(1)+'%':D}`:D);set(e,'fees',o.fees!=null?'$'+f(o.fees):D);
   set(e,'rs',r.status?r.status+(r.reason?' · '+r.reason:''):D);set(e,'ls',r.loss_streak!=null?r.loss_streak+' / '+r.max_losses:D);set(e,'rd',r.red_days!=null?r.red_days+' / '+r.max_red:D);
   set(e,'win',t.start?ct(t.start)+'–'+ct(t.end)+' CT':D);set(e,'rem',t.seconds_remaining!=null?Math.round(t.seconds_remaining)+'s':D);
@@ -266,8 +266,7 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   const sp=e.querySelector('.spine');sp.querySelectorAll('.tag').forEach(x=>x.remove());dif.slice(-15).forEach((x,i)=>{const g=document.createElement('div');g.className='tag';g.style.top=(20+i*36)+'px';g.style.left=(i%2?-30:-24)+'px';g.textContent=(x>=0?'+':'')+x.toFixed(1);sp.appendChild(g)});
   st.cur.style.top=len&&rem!=null?((1-rem/len)*590)+'px':'0';
   // TOTAL (kept from v5)
-  // v9: 15m shows desk-wide total (v3+v4) as big number + v4-only in W/L line
-  const dt=d.desk=='15m'&&d.desk_total?d.desk_total:null,bp=dt?dt.pnl:o.pnl;const tv=e.querySelector('.tot .tv');tv.textContent=money(bp);tv.className='tv '+(bp==null?'':bp>=0?'pos':'neg');set(e,'twl',dt?`desk-wide ${dt.wins}W / ${dt.losses}L · v4 ${money(o.pnl)} ${o.wins??0}W / ${o.losses??0}L`:(o.wins!=null?o.wins+'W / '+o.losses+'L':D));set(e,'tfe',o.fees!=null?'$'+f(o.fees):D);
+  const dt=d.desk_total||null,bp=dt?dt.pnl:o.pnl;const tv=e.querySelector('.tot .tv');tv.textContent=money(bp);tv.className='tv '+(bp==null?'':bp>=0?'pos':'neg');set(e,'twl',dt?`${dt.wins}W / ${dt.losses}L`+(dt.wins+dt.losses?' · '+(100*dt.wins/(dt.wins+dt.losses)).toFixed(1)+'%':''):(o.wins!=null?o.wins+'W / '+o.losses+'L':D));set(e,'tfe',o.fees!=null?'$'+f(o.fees):D);
   // footer
   e.querySelector('.log').innerHTML=(d.log||[]).slice(0,8).map(l=>{const tm=new Date(l.ts).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour12:false,hour:'2-digit',minute:'2-digit'});const tag=(l.text||'').split(' ')[0].toLowerCase();
     return `<div><b class="dim">${tm}</b><b class="${l.lvl}">${tag}</b>${(l.text||'').slice(tag.length).replace(/</g,'&lt;')}</div>`}).join('');
