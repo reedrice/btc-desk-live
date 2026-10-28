@@ -43,3 +43,4 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - 3:50 AM CT (v13): your_call open bets are now visual tiles (▲/▼/🔒, start time, tug bar + $gap, countdown ring → ⏳~ETA, payout chip, WIN?/LOSS?, WON/LOST flash 2 min). Explanations only in the ⓘ tooltip. Backups *.bak13.
 - 3:55 AM CT (v14): settling ring = static thin gray track + solid yellow arc filling by elapsed/settle_lag, '~Xm' centered, no spin/hourglass. Backups *.bak14.
 - 4:10 AM CT (v15): open-bet tile grid uses minmax(0,1fr) middle col + shrinking/ellipsis payout chip + compact range '$15→$20–$41' so the ring never clips on mobile. Backups *.bak15.
+- 4:17 AM CT (v16): conveyor belt moved left:196→208px and P&L tags centered on it (translateX(-50%)), carrier home 205→217px; belt+tags now share center x≈217. Backups *.bak16.
