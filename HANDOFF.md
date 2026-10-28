@@ -41,3 +41,4 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - Backups: index.html.bak11 (and index_neon.html.bak11 / neon_api.py.bak11 in btc5m-dashboard).
 - 3:40 AM CT (v12): 15m total = v4 trades only (5m unchanged); pair-lock settlements read 'Locked pair (bought UP and DOWN) → +$X'.
 - 3:50 AM CT (v13): your_call open bets are now visual tiles (▲/▼/🔒, start time, tug bar + $gap, countdown ring → ⏳~ETA, payout chip, WIN?/LOSS?, WON/LOST flash 2 min). Explanations only in the ⓘ tooltip. Backups *.bak13.
+- 3:55 AM CT (v14): settling ring = static thin gray track + solid yellow arc filling by elapsed/settle_lag, '~Xm' centered, no spin/hourglass. Backups *.bak14.
