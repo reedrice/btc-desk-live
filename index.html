@@ -272,7 +272,7 @@ async function poll(){const want=mode=='both'?['5m','15m']:[mode];let W=0,N=0;
     if(mode=='both'){renderCmp(cmps[k],d)}else{const st=desks[k];detect(st,d);st.data=d;render(st)}W+=Object.values(d.bots||{}).filter(b=>b.age!=null&&b.age<150).length;N+=Object.keys(d.bots||{}).length;
     okl.textContent=`[ok] ${k} api ${Math.round(performance.now()-t0)}ms`}catch(err){okl.textContent='[err] '+k+' '+(err.message||'')}}
   nN.textContent=N+want.length*5;nE.textContent=mode=='both'?D:want.reduce((s,k)=>s+desks[k].lines.length,0);nW.textContent=W}
-setInterval(poll,1500);setInterval(liveFetch,4000);
+setInterval(poll,1500);setInterval(liveFetch,3000);
 // ---------- animation loop ----------
 function frame(){frames++;frm.textContent=String(frames).padStart(4,'0');frm2.textContent=frames;
   Object.values(desks).forEach(st=>{if(st.el.isConnected){drawLines(st);moveBelt(st)}});}
