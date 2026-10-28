@@ -406,7 +406,7 @@ function smSpark(cv,s){const r=cv.getBoundingClientRect(),w=cv.width=Math.max(60
  const lo=Math.min(...s),hi=Math.max(...s),sp=(hi-lo)||1;c.strokeStyle=s[s.length-1]>=s[0]?'#3dd68c':'#ff4d6d';c.lineWidth=3;c.beginPath();s.forEach((v,i)=>{const x=i/(s.length-1)*w,y=h-4-(v-lo)/sp*(h-8);i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke()}
 function smDraw(){document.querySelectorAll('section.desk, section.cmp').forEach(sec=>{const k=(sec.querySelector('.x-dn')||{}).textContent||'';if(!k)return;const S=(PM.dd[k]||{}).sim200;
   SM_ACC.forEach(a=>{let e=sec.querySelector('.smc[data-acc="'+a[0]+'"]');if(!e){e=smEl(a);const prev=sec.querySelectorAll('.smc');const anc=prev.length?prev[prev.length-1]:(sec.querySelector('.plc')||sec.querySelector('.x-hb')||sec.querySelector('.pmc')||sec.querySelector('.stage'));anc?anc.after(e):sec.appendChild(e)}
-   if(!S)return;const A=(S.accounts||{})[a[0]]||{},q=c=>e.querySelector(c),D='—',ag=S.hb_age,dt=q('.dot');
+   if(!S)return;if(S.accounts&&!(a[0] in S.accounts)){e.remove();return}/* v21: hide accounts a desk doesn't have (15m = DESK only) */const A=(S.accounts||{})[a[0]]||{},q=c=>e.querySelector(c),D='—',ag=S.hb_age,dt=q('.dot');
    dt.style.background=ag==null?'#555':ag<45?'#3dd68c':ag<120?'#ffcf5c':'#ff4d6d';dt.title=ag==null?'no heartbeat':`heartbeat ${Math.round(ag)}s ago`;
    const b=A.bankroll,bk=q('.bk');bk.textContent=b==null?D:'$'+b.toFixed(2);bk.className='bk '+(b==null?'mu':b>S.start?'g':b<S.start?'rd':'');
    q('.sb').textContent=A.bet==null?D:'$'+A.bet.toFixed(2);const n=S.need||3,st=A.streak||0;q('.sk').innerHTML=Array.from({length:n},(_,i)=>`<i class="sd${i<st?' on':''}"></i>`).join('');

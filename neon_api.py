@@ -120,7 +120,7 @@ def build_neon(desk="5m"):
         output=dict(pnl=_num(summ.get("total_pnl_after_fees")), wins=summ.get("wins"), losses=summ.get("losses"),
                     fees=_num(summ.get("total_fees")), windows=summ.get("windows"), candidates=summ.get("candidates"),
                     skips=summ.get("skips"), equity=eq),
-        log=log[::-1][:30], pairlock=_pairlock(d, now) if desk == "5m" else None, sim200=_sim200("/home/box/shared/btc5m", now))
+        log=log[::-1][:30], pairlock=_pairlock(d, now) if desk == "5m" else None, sim200=_sim200("/home/box/shared/btc5m" if desk == "5m" else "/home/box/shared/btc15m", now))  # v21: 15m reads its own sim200 (main account only)
 
 # v20: sim200 — two $200 paper bankroll sims. Read-only from sim200/state.json. Kept in its OWN block:
 # never added to desk_total / output / any desk record (Reed's rule).
