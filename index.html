@@ -29,7 +29,7 @@
 .pn .t{background:var(--ti);color:#fff;font-weight:700;padding:2px 6px;display:flex;justify-content:space-between}.pn .t i{font-style:normal;color:#aaa}
 .pn.act .t{background:var(--tr)}.pn.act{border-color:#8a2f45}
 .pn .b{padding:4px 6px}.r{display:flex;justify-content:space-between;padding:1px 2px}.r span:first-child{color:var(--mu)}.r.sel{background:#1f2a3a;color:#fff}
-.pn.dim{opacity:.35}.bet{padding:3px 2px;border-top:1px solid rgba(255,255,255,.08)}.bet .pl{white-space:normal;overflow-wrap:anywhere;font-size:.92em;line-height:1.25}.betw{max-height:130px;overflow-y:auto;overflow-x:hidden}.bet .b{color:#fff}.bet .cd{white-space:normal;font-variant-numeric:tabular-nums;color:var(--go)}.bet .cd.ok{color:#3dff9a}.bet .cd.bad{color:#ff4d6d}.bet .cd.st{color:#ffcf5c}.lg{font-size:.78em;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;padding-top:2px}.cdr{display:flex;justify-content:space-between;gap:6px;padding:1px 2px;white-space:nowrap;overflow:hidden}.cdr .cd{color:var(--go);font-variant-numeric:tabular-nums}.cdr .cd.st{color:#ffcf5c}.cdr span{overflow:hidden;text-overflow:ellipsis}.pn.flash{box-shadow:0 0 0 2px var(--te),0 0 18px var(--te)}
+.pn.dim{opacity:.35}.bet{padding:3px 2px;border-top:1px solid rgba(255,255,255,.08)}.bet .pl{white-space:normal;overflow-wrap:anywhere;font-size:.92em;line-height:1.25}.betw{max-height:170px;overflow-y:auto;overflow-x:hidden}.bet .b{color:#fff}.bet .cd{white-space:normal;font-variant-numeric:tabular-nums;color:var(--go)}.bet .cd.ok{color:#3dff9a}.bet .cd.bad{color:#ff4d6d}.bet .cd.st{color:#ffcf5c}.lg{font-size:.78em;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;padding-top:2px}.cdr{display:flex;justify-content:space-between;gap:6px;padding:1px 2px;white-space:nowrap;overflow:hidden}.cdr .cd{color:var(--go);font-variant-numeric:tabular-nums}.cdr .cd.st{color:#ffcf5c}.cdr span{overflow:hidden;text-overflow:ellipsis}.pn.flash{box-shadow:0 0 0 2px var(--te),0 0 18px var(--te)}
 .fl{position:absolute;width:230px}
 .blocks{display:flex;gap:2px;margin-top:4px}.blocks span{flex:1;height:10px;background:#23233a}.blocks .w{background:var(--pu)}.blocks .l{background:var(--pk)}
 .mini{display:block;width:100%;height:26px;margin-top:4px}
@@ -130,7 +130,7 @@ body.both #desks{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px
  <div class="pn"><div class="t">RUN LOG</div><div class="b log"></div></div>
  <div class="pn"><div class="t">DISPATCH</div><div class="b x-disp"></div><canvas class="x-histo" style="width:100%;height:30px;display:block"></canvas></div>
  <div class="pn"><div class="t">OUTPUT / HUMAN GATE</div><div class="b"><div class="big x-pnl">—</div>
-  <div class="go x-o1" style="color:var(--go)">—</div><div class="dim x-o2">—</div><div class="x-o3">paper only · send disabled</div><div class="pbar x-pb"></div></div></div>
+  <div class="go x-o1" style="color:var(--go)">—</div><div class="dim x-o2">—</div><div class="x-o3">paper only · send disabled</div><div class="dim x-pbl" style="margin-top:4px;font-size:.85em">—</div><div class="pbar x-pb" title="Win rate: share of settled bets that made money"></div></div></div>
 </div></section></template>
 <script>
 // ---------- helpers ----------
@@ -187,7 +187,7 @@ setInterval(tickCD,1000);
 function renderCmp(e,d){const t=d.tracker||{},p=d.predictor||{},r=d.risk||{},o=d.output||{},n=(o.wins||0)+(o.losses||0);
   const dt=d.desk_total||null,bp=dt?dt.pnl:o.pnl; // v11: both desks = one total from all scored settlements (netted per slug)
   const tv=$(e,'tot');tv.textContent=money(bp);tv.className='ctot x-tot '+(bp==null?'':bp>=0?'pos':'neg');
-  set(e,'wl',o.wins!=null?`${o.wins}W / ${o.losses}L · ${n?(o.wins/n*100).toFixed(1)+'%':D}`:D);set(e,'fees',o.fees!=null?'$'+f(o.fees):D);
+  {const W_=dt?dt.wins:o.wins,L_=dt?dt.losses:o.losses,N_=(W_||0)+(L_||0);set(e,'wl',W_!=null?`${W_}W / ${L_}L · ${N_?(W_/N_*100).toFixed(1)+'%':D}`:D)}set(e,'fees',o.fees!=null?'$'+f(o.fees):D);
   set(e,'rs',r.status?r.status+(r.reason?' · '+r.reason:''):D);set(e,'ls',r.loss_streak!=null?r.loss_streak+' / '+r.max_losses:D);set(e,'rd',r.red_days!=null?r.red_days+' / '+r.max_red:D);
   set(e,'win',t.start?ct(t.start)+'–'+ct(t.end)+' CT':D);set(e,'rem',t.seconds_remaining!=null?Math.round(t.seconds_remaining)+'s':D);
   set(e,'dec',p.decision?p.decision.toUpperCase()+' '+(p.side||'')+(p.ask!=null?' @'+Math.round(p.ask*100)+'¢':''):D);set(e,'at',p.ts_ct?p.ts_ct+' CT':D);set(e,'op',(d.open_positions||d.open||[]).length);$(e,'cd').innerHTML=cdRows(d,3,true);tickCD();
@@ -242,7 +242,7 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   set(e,'cl',f(t.chainlink));set(e,'tw',f(t.twap60));
   set(e,'rs',r.status);set(e,'ls',r.loss_streak!=null?r.loss_streak+' / '+r.max_losses:D);set(e,'rd',r.red_days!=null?r.red_days+' / '+r.max_red:D);set(e,'acc',r.accuracy!=null?(r.accuracy*100).toFixed(1)+'%':D);
   $(e,'lsb').innerHTML=r.max_losses?Array.from({length:r.max_losses},(_,i)=>`<span class="${i<r.loss_streak?'l':''}"></span>`).join(''):'';
-  set(e,'fees',o.fees!=null?'$'+f(o.fees):D);set(e,'calls',o.candidates);set(e,'wins',o.windows);set(e,'wl',o.wins!=null?o.wins+' / '+o.losses:D);
+  set(e,'fees',o.fees!=null?'$'+f(o.fees):D);set(e,'calls',o.candidates);set(e,'wins',o.windows);{const dt=d.desk_total;set(e,'wl',dt?dt.wins+' / '+dt.losses:(o.wins!=null?o.wins+' / '+o.losses:D))}
   const eq=o.equity||[],dif=eq.map((v,i)=>v-(i?eq[i-1]:0));line($(e,'eq'),eq,'#8b7bff');
   $(e,'hist').innerHTML=dif.map(x=>`<span class="${x>=0?'w':'l'}"></span>`).join('');
   // tracker/analyst/predictor/risk cards
@@ -275,8 +275,8 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   const hc=$(e,'histo'),hw=hc.width=hc.clientWidth*2,hh=hc.height=60,hg=hc.getContext('2d');const mx=Math.max(1,...dif.map(Math.abs));
   dif.forEach((x,i)=>{const bw=hw/Math.max(dif.length,1);hg.fillStyle=x>=0?'#8b7bff':'#ff5c8a';const bh=Math.abs(x)/mx*(hh-6);hg.fillRect(i*bw+2,hh-bh,bw-4,bh)});
   const pn=$(e,'pnl');pn.textContent=o.pnl==null?D:(o.pnl<0?'-':'')+'$'+Math.abs(o.pnl).toFixed(2);
-  set(e,'o1',o.wins!=null?`${o.wins} won × ${o.losses} lost · paper`:D);set(e,'o2',`calls ${o.candidates??D}   skips ${o.skips??D}   fees $${f(o.fees)}`);
-  const n=(o.wins||0)+(o.losses||0),fl=n?Math.round(o.wins/n*30):0;$(e,'pb').innerHTML=Array.from({length:30},(_,i)=>`<span class="${i<fl?'f':''}"></span>`).join('')}
+  {const t=d.desk_total||o;set(e,'o1',t.wins!=null?`${t.wins} won × ${t.losses} lost · paper`:D)}set(e,'o2',`calls ${o.candidates??D}   skips ${o.skips??D}   fees $${f(o.fees)}`);
+  const _t=d.desk_total||o,n=(_t.wins||0)+(_t.losses||0),fl=n?Math.round(_t.wins/n*30):0;$(e,'pbl').textContent=n?`Win rate ${Math.round(_t.wins/n*100)}% (${_t.wins} of ${n})`:'Win rate — (no settled bets yet)';$(e,'pb').innerHTML=Array.from({length:30},(_,i)=>`<span class="${i<fl?'f':''}"></span>`).join('')}
 
 // ---------- encrypted gist relay (GitHub Pages build) ----------
 const GIST_FALLBACK='https://gist.githubusercontent.com/reedrice/4a5f16a520bf0ca912e0064d9ba8fe40/raw/live.json';
