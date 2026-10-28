@@ -29,7 +29,7 @@
 .pn .t{background:var(--ti);color:#fff;font-weight:700;padding:2px 6px;display:flex;justify-content:space-between}.pn .t i{font-style:normal;color:#aaa}
 .pn.act .t{background:var(--tr)}.pn.act{border-color:#8a2f45}
 .pn .b{padding:4px 6px}.r{display:flex;justify-content:space-between;padding:1px 2px}.r span:first-child{color:var(--mu)}.r.sel{background:#1f2a3a;color:#fff}
-.pn.dim{opacity:.35}.pn.flash{box-shadow:0 0 0 2px var(--te),0 0 18px var(--te)}
+.pn.dim{opacity:.35}.cdr{display:flex;justify-content:space-between;gap:6px;padding:1px 2px;white-space:nowrap;overflow:hidden}.cdr .cd{color:var(--go);font-variant-numeric:tabular-nums}.cdr .cd.st{color:#ffcf5c}.cdr span{overflow:hidden;text-overflow:ellipsis}.pn.flash{box-shadow:0 0 0 2px var(--te),0 0 18px var(--te)}
 .fl{position:absolute;width:230px}
 .blocks{display:flex;gap:2px;margin-top:4px}.blocks span{flex:1;height:10px;background:#23233a}.blocks .w{background:var(--pu)}.blocks .l{background:var(--pk)}
 .mini{display:block;width:100%;height:26px;margin-top:4px}
@@ -72,7 +72,7 @@ body.both #desks{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px
  <div class="r"><span>W / L · win %</span><span class="x-wl">—</span></div><div class="r"><span>fees</span><span class="x-fees">—</span></div>
  <div class="sec">RISK</div><div class="r"><span>status</span><span class="x-rs">—</span></div><div class="r"><span>loss streak</span><span class="x-ls">—</span></div><div class="r"><span>red days</span><span class="x-rd">—</span></div>
  <div class="sec">WINDOW</div><div class="r"><span>current</span><span class="x-win">—</span></div><div class="r"><span>seconds left</span><span class="x-rem">—</span></div>
- <div class="sec">LATEST DECISION</div><div class="r"><span>call</span><span class="x-dec">—</span></div><div class="r"><span>at</span><span class="x-at">—</span></div><div class="r"><span>open calls</span><span class="x-op">—</span></div>
+ <div class="sec">LATEST DECISION</div><div class="r"><span>call</span><span class="x-dec">—</span></div><div class="r"><span>at</span><span class="x-at">—</span></div><div class="r"><span>open calls</span><span class="x-op">—</span></div><div class="x-cd"></div>
  <div class="sec">BOT HEARTBEATS</div><div class="x-hb"></div></section></template>
 <template id="tpl"><section class="desk"><div class="stage">
  <canvas class="lines"></canvas>
@@ -160,12 +160,18 @@ function layout(){document.querySelectorAll('.tg button').forEach(b=>b.classList
   if(mode=='both'){want.forEach(k=>{if(!cmps[k]){cmps[k]=cmpT.content.firstElementChild.cloneNode(true);set(cmps[k],'dn',k);set(cmps[k],'dn2',k)}desks_el().appendChild(cmps[k])});poll();return}
   want.forEach(k=>{if(!desks[k])desks[k]=build(k);desks_el().appendChild(desks[k].el)});requestAnimationFrame(()=>want.forEach(k=>geom(desks[k])));poll()}
 const cmps={}; // v7: simple comparison cards for 'both'
+// v10: open-position countdown. Rows carry data-end/data-lag; tickCD() rewrites them every second client-side.
+function cdRows(d,max){const op=d.open_positions||[];if(!op.length)return '';return op.slice(0,max).map(x=>`<div class="cdr"><span>${x.side||''} @${x.entry!=null?Math.round(x.entry*100)+'¢':'?'}</span><span class="cd" data-end="${x.end_ts}" data-lag="${x.settle_lag_s||''}"></span></div>`).join('')}
+function mmss(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function tickCD(){const now=Date.now()/1000;document.querySelectorAll('.cd[data-end]').forEach(c=>{const e=+c.dataset.end,lag=+c.dataset.lag;if(now<e){c.textContent='closes in '+mmss(e-now);c.classList.remove('st')}else{c.textContent='settling… '+mmss(now-e)+(lag?' (~'+Math.round(lag/60)+'m)':'');c.classList.add('st')}})}
+setInterval(tickCD,1000);
 function renderCmp(e,d){const t=d.tracker||{},p=d.predictor||{},r=d.risk||{},o=d.output||{},n=(o.wins||0)+(o.losses||0);
-  const tv=$(e,'tot');tv.textContent=money(o.pnl);tv.className='ctot x-tot '+(o.pnl==null?'':o.pnl>=0?'pos':'neg');
+  const dt=d.desk=='15m'&&d.desk_total?d.desk_total:null,bp=dt?dt.pnl:o.pnl; // v9: 15m big number = desk-wide (v3+v4)
+  const tv=$(e,'tot');tv.textContent=money(bp)+(dt?` desk-wide · v4 ${money(o.pnl)}`:'');tv.className='ctot x-tot '+(bp==null?'':bp>=0?'pos':'neg');
   set(e,'wl',o.wins!=null?`${o.wins}W / ${o.losses}L · ${n?(o.wins/n*100).toFixed(1)+'%':D}`:D);set(e,'fees',o.fees!=null?'$'+f(o.fees):D);
   set(e,'rs',r.status?r.status+(r.reason?' · '+r.reason:''):D);set(e,'ls',r.loss_streak!=null?r.loss_streak+' / '+r.max_losses:D);set(e,'rd',r.red_days!=null?r.red_days+' / '+r.max_red:D);
   set(e,'win',t.start?ct(t.start)+'–'+ct(t.end)+' CT':D);set(e,'rem',t.seconds_remaining!=null?Math.round(t.seconds_remaining)+'s':D);
-  set(e,'dec',p.decision?p.decision.toUpperCase()+' '+(p.side||'')+(p.ask!=null?' @'+Math.round(p.ask*100)+'¢':''):D);set(e,'at',p.ts_ct?p.ts_ct+' CT':D);set(e,'op',(d.open||[]).length);
+  set(e,'dec',p.decision?p.decision.toUpperCase()+' '+(p.side||'')+(p.ask!=null?' @'+Math.round(p.ask*100)+'¢':''):D);set(e,'at',p.ts_ct?p.ts_ct+' CT':D);set(e,'op',(d.open_positions||d.open||[]).length);$(e,'cd').innerHTML=cdRows(d,3);tickCD();
   $(e,'hb').innerHTML=['tracker','analyst','predictor','risk'].map(k=>{const a=((d.bots||{})[k]||{}).age;return `<div class="r"><span>${k}</span><span class="${a==null?'dim':a<150?'ok':'bad'}">${a==null?D:Math.round(a)+'s ago'+(a<150?'':' · stale')}</span></div>`}).join('')}
 const desks_el=()=>document.getElementById('desks');
 
@@ -230,7 +236,8 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   set(e,'kw',o.wins);set(e,'kl',o.losses);set(e,'st',r.status?(r.status+' · '+(r.reason||'')):D);ring($(e,'ring'),o.wins||0,o.losses||0);
   e.querySelector('[data-p=risk]').classList.toggle('act',r.status&&r.status!='active');
   const op=d.open||[];const yc=e.querySelector('[data-p=your_call]');yc.classList.toggle('dim',!op.length);
-  $(e,'open').innerHTML=op.length?op.slice(0,4).map(x=>`<div class="r"><span>${x.ts_ct} ${x.side}</span><span>@${Math.round(x.ask*100)}¢ · pending</span></div>`).join(''):'<div class="dim">no open candidates</div>';
+  const opp=d.open_positions||[];yc.classList.toggle('dim',!opp.length&&!op.length);
+  $(e,'open').innerHTML=opp.length?cdRows(d,4):'<div class="dim">no open positions</div>';tickCD();
   set(e,'pc',o.candidates);set(e,'ps',o.skips);set(e,'po',op.length);
   // caption: window phase
   const rem=t.seconds_remaining,len=t.end&&t.start?t.end-t.start:null,ph=rem==null||!len?D:rem>len*.66?'EARLY WINDOW SCAN':rem>len*.33?'MID WINDOW TRACK':'LATE WINDOW EVAL';
@@ -240,7 +247,8 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   const sp=e.querySelector('.spine');sp.querySelectorAll('.tag').forEach(x=>x.remove());dif.slice(-15).forEach((x,i)=>{const g=document.createElement('div');g.className='tag';g.style.top=(20+i*36)+'px';g.style.left=(i%2?-30:-24)+'px';g.textContent=(x>=0?'+':'')+x.toFixed(1);sp.appendChild(g)});
   st.cur.style.top=len&&rem!=null?((1-rem/len)*590)+'px':'0';
   // TOTAL (kept from v5)
-  const tv=e.querySelector('.tot .tv');tv.textContent=money(o.pnl);tv.className='tv '+(o.pnl==null?'':o.pnl>=0?'pos':'neg');set(e,'twl',o.wins!=null?o.wins+'W / '+o.losses+'L':D);set(e,'tfe',o.fees!=null?'$'+f(o.fees):D);
+  // v9: 15m shows desk-wide total (v3+v4) as big number + v4-only in W/L line
+  const dt=d.desk=='15m'&&d.desk_total?d.desk_total:null,bp=dt?dt.pnl:o.pnl;const tv=e.querySelector('.tot .tv');tv.textContent=money(bp);tv.className='tv '+(bp==null?'':bp>=0?'pos':'neg');set(e,'twl',dt?`desk-wide ${dt.wins}W / ${dt.losses}L · v4 ${money(o.pnl)} ${o.wins??0}W / ${o.losses??0}L`:(o.wins!=null?o.wins+'W / '+o.losses+'L':D));set(e,'tfe',o.fees!=null?'$'+f(o.fees):D);
   // footer
   e.querySelector('.log').innerHTML=(d.log||[]).slice(0,8).map(l=>{const tm=new Date(l.ts).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour12:false,hour:'2-digit',minute:'2-digit'});const tag=(l.text||'').split(' ')[0].toLowerCase();
     return `<div><b class="dim">${tm}</b><b class="${l.lvl}">${tag}</b>${(l.text||'').slice(tag.length).replace(/</g,'&lt;')}</div>`}).join('');

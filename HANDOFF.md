@@ -20,3 +20,12 @@ Static copy of the neon BTC desk dashboard (5m / 15m / both) served by GitHub Pa
 
 ## v9 (2026-10-28) — one mascot per bot card
 Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 900,410), so only some cards looked "owned" and tracker/risk/your_call had none. Now `build()` docks a small bobbing blob inside each card's title bar via `MASCOT` (tracker teal, analyst pink, predictor purple, risk gold, your_call blue, pipeline orange). Lives inside the card → no overflow; works in 5m and 15m. The white carrier blob is unchanged.
+
+## Oct 28, 2026: payload now includes `desk_total` per desk (see btc5m-dashboard/HANDOFF.md v9). Pusher restart needed only to reload neon_api.
+
+## v10 (2026-10-28 03:20 CT) — open-position countdown
+- neon_api.py adds add-only `open_positions:[{slug,side,entry,start_ts,end_ts,strategy,settle_lag_s}]`.
+  5m = open candidate decisions (after settle_net netting); 15m = paper_summary.json open_slugs. Window end = slug start + 300/900s.
+- UI: your_call card lists open positions with a client-side 1s ticker (`tickCD`): "closes in m:ss" until end_ts,
+  then "settling… m:ss" elapsed (15m appends "(~30m)" expected lag). 'both' view shows compact rows under "open calls".
+- This index.html also picked up the v9 15m desk-wide/v4 total display from the local dashboard.
