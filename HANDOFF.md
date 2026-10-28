@@ -17,3 +17,6 @@ Static copy of the neon BTC desk dashboard (5m / 15m / both) served by GitHub Pa
 
 ## Restart
 `cd /workspace/btc-desk-live && setsid nohup ./watchdog.sh >/dev/null 2>&1 < /dev/null &`
+
+## v9 (2026-10-28) — one mascot per bot card
+Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 900,410), so only some cards looked "owned" and tracker/risk/your_call had none. Now `build()` docks a small bobbing blob inside each card's title bar via `MASCOT` (tracker teal, analyst pink, predictor purple, risk gold, your_call blue, pipeline orange). Lives inside the card → no overflow; works in 5m and 15m. The white carrier blob is unchanged.

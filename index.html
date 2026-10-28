@@ -53,6 +53,7 @@
 .blob{position:absolute;width:20px;height:16px;border-radius:9px 9px 5px 5px;z-index:5;pointer-events:none}
 .blob:before,.blob:after{content:"";position:absolute;top:5px;width:3px;height:4px;background:#0d0d14}.blob:before{left:5px}.blob:after{right:5px}
 .carrier{transition:left 1.1s ease-in-out,top 1.1s ease-in-out}.carrier .chip{left:14px;top:-6px}
+.blob.mascot{position:relative;display:inline-block;width:14px;height:11px;margin-left:auto;margin-right:6px;z-index:1}.blob.mascot:before,.blob.mascot:after{top:3px;width:2px;height:3px}.blob.mascot:before{left:3px}.blob.mascot:after{right:3px}
 .bob{animation:bob 1.6s ease-in-out infinite}@keyframes bob{50%{transform:translateY(-4px)}}
 /* v7: simple 'both' comparison view (no fan lines/conveyor/dense panels) */
 body.both #desks{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;padding:16px;max-width:1400px;margin:0 auto}
@@ -137,6 +138,7 @@ const D='—',$=(e,c)=>e.querySelector('.x-'+c),set=(e,c,v)=>{const n=$(e,c);if(
 const f=(x,n=2)=>x==null||isNaN(x)?D:(+x).toFixed(n),money=x=>x==null?D:(x>=0?'+$':'-$')+Math.abs(x).toFixed(2);
 const ct=t=>new Date(t*1000).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour12:false,hour:'2-digit',minute:'2-digit'});
 let mode=localStorage.neonMode||'5m',frames=0;const desks={};
+const MASCOT={tracker:'#3fd6b8',analyst:'#ff7ab0',predictor:'#9b7bff',risk:'#ffcf5c',your_call:'#5cb8ff',pipeline:'#ffa04a'};
 const BOT_COLOR={tracker:'#3fd6b8',analyst:'#8b7bff',predictor:'#ff5c8a',risk:'#ffcf5c'};
 setInterval(()=>{clock.textContent=new Date().toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour12:false})+' CT'},500);
 document.querySelectorAll('.tg button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;localStorage.neonMode=mode;layout()});
@@ -149,7 +151,8 @@ function build(k){const el=tpl.content.firstElementChild.cloneNode(true);set(el,
   // mascots: carrier (moves items belt->panel) + idle blobs
   const st={k,el,data:null,prev:{},lines:[],parts:[],price:[],queue:[],busy:false,cur};
   st.car=blob(el.querySelector('.stage'),'#fff',205,280,'carrier');
-  blob(el.querySelector('.stage'),'#ff7ab0',600,120,'bob');blob(el.querySelector('.stage'),'#9b7bff',870,130,'bob');blob(el.querySelector('.stage'),'#ffa04a',900,410,'bob');
+  // v9: one mascot per bot card, docked inside the card's title bar (was 3 blobs at fixed stage px, so tracker/risk/your_call had none and some sat off-card)
+  Object.entries(MASCOT).forEach(([n,c])=>{const pn=el.querySelector('.pn[data-p="'+n+'"] .t');if(pn){const m=document.createElement('span');m.className='blob bob mascot';m.style.background=c;m.style.animationDelay=(Math.random()*1.6).toFixed(2)+'s';pn.insertBefore(m,pn.querySelector('i'))}});
   return st}
 function blob(par,c,x,y,cls){const b=document.createElement('div');b.className='blob '+cls;b.style.background=c;b.style.left=x+'px';b.style.top=y+'px';par.appendChild(b);return b}
 function layout(){document.querySelectorAll('.tg button').forEach(b=>b.classList.toggle('on',b.dataset.m==mode));
