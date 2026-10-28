@@ -60,3 +60,6 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - neon_api.build_neon("5m") adds `pairlock` (read-only from /home/box/shared/btc5m/pairlock_fast/{opportunities,paper_trades,windows}.jsonl + heartbeat_pairlock_fast.json): hb_age, paused, pnl, settled, spotted_today, filled_today, pairs, days, edge_c, naked_pct, windows_today, best_today, last[5]. 15m: null.
 - UI: self-mounting `.plc` card (plDraw, 1s) — after BOT HEARTBEATS in "both" view, below the stage in 5m view. Tooltips explain each number. Empty state shows best pair cost seen today.
 - Backups: *.bak19. No trading logic changed.
+
+## v20 (Oct 28 2026) — $200 SIM cards
+Two paper $200 bankroll cards (desk copy + pair-lock copy) on both desks: bankroll, sparkline, bet, 3 streak dots, today W-L; tooltips explain. Data `/api/neon` → `sim200` from /home/box/shared/btc5m/sim200/state.json. Kept separate: never summed into desk P&L/record. Backups *.bak20.

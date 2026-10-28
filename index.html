@@ -389,4 +389,28 @@ function plDraw(){document.querySelectorAll('section.desk, section.cmp').forEach
   q('.pl-rows').innerHTML=(p.last&&p.last.length)?p.last.map(r=>`<div class="fr" title="${r.status} · cost per pair incl. fees · net after settle"><span class="mu">${r.ct||D}</span><span>${r.status=='pair'?'🔒':'½'}</span><span>${r.cpp!=null?(r.cpp*100).toFixed(1)+'¢':D}</span><span class="${r.net>0?'g':r.net<0?'rd':'mu'}">${r.net==null?'open':(r.net<0?'-':'+')+'$'+Math.abs(r.net).toFixed(2)}</span></div>`).join('')
    :`<div class="fr mu" title="Windows checked today: ${p.windows_today}. Cheapest pair seen today: ${p.best_today!=null?(p.best_today*100).toFixed(1)+'¢':'—'} (needs ≤98¢)">watching… no cheap pairs yet${p.best_today!=null?' · best '+(p.best_today*100).toFixed(1)+'¢':''}</div>`})}
 setInterval(plDraw,1000);
+/* v20: $200 SIM (paper) cards — both desks. Data: /api/neon → sim200 (read-only from sim200/state.json).
+   Separate from every desk total: never summed into desk P&L / W-L. */
+(function(){const css=document.createElement('style');css.textContent=`.smc{background:#11131c;border:1px solid #23263a;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:12px;max-width:520px}
+.smc .ph{display:flex;align-items:center;gap:8px;color:#fff;font-weight:700;letter-spacing:1px;cursor:help}.smc .dot{width:9px;height:9px;border-radius:50%;background:#555;margin-left:auto}
+.smc .rw{display:flex;align-items:center;gap:10px;margin-top:4px}.smc .bk{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;cursor:help}.smc canvas{flex:1;height:28px;min-width:60px}
+.smc .g{color:#3dd68c}.smc .rd{color:#ff4d6d}.smc .mu{color:#8a8fa6}.smc .ch{background:#181b28;border-radius:6px;padding:3px 7px;cursor:help;white-space:nowrap}.smc .sd{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a2d40;margin:0 1px}.smc .sd.on{background:#3dd68c}`;document.head.appendChild(css)})();
+const SM_ACC=[['main','💰 $200 · DESK','Paper $200 account copying the main desk Predictor calls (same prices, outcomes, fees), sized from its own bankroll. Separate from desk totals. No real money.'],
+ ['pairlock','💰 $200 · 🔒 PAIR','Paper $200 account copying the pair-lock bot trades, scaled to its own bet size. Separate from desk totals. No real money.']];
+function smEl(a){const e=document.createElement('div');e.className='smc';e.dataset.acc=a[0];e.innerHTML=`<div class="ph" title="${a[2]}">${a[1]} <span class="mu">· paper</span><span class="dot" title="heartbeat"></span></div>
+<div class="rw"><span class="bk" title="Current bankroll (started at $200)">—</span><canvas title="Bankroll after each settled bet"></canvas>
+<span class="ch sb" title="Current bet size. Starts $5; resets to 2.5% of bankroll after 3 green CT days in a row or any red day. Max $10.">—</span>
+<span class="ch sk" title="Green-day streak (CT days). 3 in a row → bet resizes to 2.5% of bankroll"></span>
+<span class="ch wl" title="Today's wins-losses (CT)">—</span></div>`;return e}
+function smSpark(cv,s){const r=cv.getBoundingClientRect(),w=cv.width=Math.max(60,r.width*2),h=cv.height=56,c=cv.getContext('2d');if(!s||s.length<2){c.strokeStyle='#2a2d40';c.beginPath();c.moveTo(0,h/2);c.lineTo(w,h/2);c.stroke();return}
+ const lo=Math.min(...s),hi=Math.max(...s),sp=(hi-lo)||1;c.strokeStyle=s[s.length-1]>=s[0]?'#3dd68c':'#ff4d6d';c.lineWidth=3;c.beginPath();s.forEach((v,i)=>{const x=i/(s.length-1)*w,y=h-4-(v-lo)/sp*(h-8);i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke()}
+function smDraw(){document.querySelectorAll('section.desk, section.cmp').forEach(sec=>{const k=(sec.querySelector('.x-dn')||{}).textContent||'';if(!k)return;const S=(PM.dd[k]||{}).sim200;
+  SM_ACC.forEach(a=>{let e=sec.querySelector('.smc[data-acc="'+a[0]+'"]');if(!e){e=smEl(a);const prev=sec.querySelectorAll('.smc');const anc=prev.length?prev[prev.length-1]:(sec.querySelector('.plc')||sec.querySelector('.x-hb')||sec.querySelector('.pmc')||sec.querySelector('.stage'));anc?anc.after(e):sec.appendChild(e)}
+   if(!S)return;const A=(S.accounts||{})[a[0]]||{},q=c=>e.querySelector(c),D='—',ag=S.hb_age,dt=q('.dot');
+   dt.style.background=ag==null?'#555':ag<45?'#3dd68c':ag<120?'#ffcf5c':'#ff4d6d';dt.title=ag==null?'no heartbeat':`heartbeat ${Math.round(ag)}s ago`;
+   const b=A.bankroll,bk=q('.bk');bk.textContent=b==null?D:'$'+b.toFixed(2);bk.className='bk '+(b==null?'mu':b>S.start?'g':b<S.start?'rd':'');
+   q('.sb').textContent=A.bet==null?D:'$'+A.bet.toFixed(2);const n=S.need||3,st=A.streak||0;q('.sk').innerHTML=Array.from({length:n},(_,i)=>`<i class="sd${i<st?' on':''}"></i>`).join('');
+   const t=A.today||{};q('.wl').textContent=`${t.w||0}-${t.l||0}`;q('.wl').title=`Today's wins-losses (CT) · ${A.trades||0} bets since start · today ${(t.pnl<0?'-':'+')}$${Math.abs(t.pnl||0).toFixed(2)}`;smSpark(q('canvas'),A.spark)})})}
+setInterval(smDraw,1000);
+
 </script><div id="relayAge" style="position:fixed;left:8px;bottom:4px;font:11px monospace;color:#7a7aa0;z-index:99"></div></body></html>

@@ -120,7 +120,17 @@ def build_neon(desk="5m"):
         output=dict(pnl=_num(summ.get("total_pnl_after_fees")), wins=summ.get("wins"), losses=summ.get("losses"),
                     fees=_num(summ.get("total_fees")), windows=summ.get("windows"), candidates=summ.get("candidates"),
                     skips=summ.get("skips"), equity=eq),
-        log=log[::-1][:30], pairlock=_pairlock(d, now) if desk == "5m" else None)
+        log=log[::-1][:30], pairlock=_pairlock(d, now) if desk == "5m" else None, sim200=_sim200("/home/box/shared/btc5m", now))
+
+# v20: sim200 — two $200 paper bankroll sims. Read-only from sim200/state.json. Kept in its OWN block:
+# never added to desk_total / output / any desk record (Reed's rule).
+def _sim200(d, now):
+    st = _rj(os.path.join(d, "sim200", "state.json")) or {}; hb = _rj(os.path.join(d, "heartbeat_sim200.json")) or {}
+    ht = _ts(hb.get("ts")); c = st.get("config") or {}
+    acc = {k: dict(bankroll=v.get("bankroll"), bet=v.get("bet"), streak=v.get("green_streak"), trades=v.get("trades"),
+                   today=v.get("today"), spark=v.get("spark")) for k, v in (st.get("accounts") or {}).items()}
+    return dict(hb_age=round(now - ht, 1) if ht else None, start=c.get("start_bankroll"), cap=c.get("bet_cap"),
+                need=c.get("green_streak_to_resize"), accounts=acc)
 
 # v19: PAIR-LOCK (paper) summary for the 5m desk. Reads ONLY pairlock_fast/ files + its heartbeat; never writes.
 def _pairlock(d, now):
