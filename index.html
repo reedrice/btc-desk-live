@@ -180,7 +180,7 @@ function lead(x,px){if(x.pair&&x.pays_up===x.pays_down&&x.cost!=null)return{lock
 function tickCD(){const now=Date.now()/1000;document.querySelectorAll('.bet[data-j]').forEach(el=>{let x;try{x=JSON.parse(decodeURIComponent(el.dataset.j))}catch(e){return}
   const q=s=>el.querySelector(s),rf=q('.rf'),rt=q('.rt'),bd=q('.bdg'),C=2*Math.PI*15;
   if(x.result){if(now-(x.result.ts||now)>120){el.style.display='none';return}const w=x.result.win,p=x.result.pnl;
-    bd.textContent=`${w?'WON':'LOST'} ${p!=null?(p>=0?'+':'-')+usd(Math.abs(p)):''}`;bd.className='bdg big '+(w?'ok':'bad');el.classList.add('done');return}
+    bd.textContent=`${w?'WON':'LOST'} ${p!=null?(p>=0?'+':'-')+usd(Math.abs(p)):''}`;bd.className='bdg big '+(w?'ok':'bad');el.classList.add('fin');return}
   const open=now<x.end_ts,l=lead(x,open?(x.now_twap!=null?x.now_twap:x.now_px):x.final_twap);
   if(open){const fr=Math.max(0,Math.min(1,(x.end_ts-now)/((x.end_ts-x.start_ts)||300)));rf.style.strokeDasharray=C;rf.style.strokeDashoffset=C*(1-fr);rt.textContent=mmss(x.end_ts-now);el.classList.remove('wait');bd.textContent='';bd.className='bdg'}
   else{const lag=x.settle_lag_s||330,eta=Math.max(0,x.end_ts+lag-now);rf.style.strokeDasharray='20 75';rf.style.strokeDashoffset=0;rt.textContent='⏳'+(eta>0?'~'+Math.ceil(eta/60)+'m':'…');el.classList.add('wait');
