@@ -55,3 +55,8 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - Chart PTB order: gamma priceToBeat -> pm.ptb (slug must match current window) -> Chainlink stream point at start -> tracker.ptb.
 - Pusher + watchdog were found dead since 04:04 CDT; restarted with nohup ./watchdog.sh.
 - Ladder (v16) re-verified: belt 218-236px, tag centers 226-230 at 1500 and 390 (stage layout 1140).
+
+## v19 PAIR-LOCK (paper) panel — 2026-10-28 CT
+- neon_api.build_neon("5m") adds `pairlock` (read-only from /home/box/shared/btc5m/pairlock_fast/{opportunities,paper_trades,windows}.jsonl + heartbeat_pairlock_fast.json): hb_age, paused, pnl, settled, spotted_today, filled_today, pairs, days, edge_c, naked_pct, windows_today, best_today, last[5]. 15m: null.
+- UI: self-mounting `.plc` card (plDraw, 1s) — after BOT HEARTBEATS in "both" view, below the stage in 5m view. Tooltips explain each number. Empty state shows best pair cost seen today.
+- Backups: *.bak19. No trading logic changed.

@@ -120,7 +120,35 @@ def build_neon(desk="5m"):
         output=dict(pnl=_num(summ.get("total_pnl_after_fees")), wins=summ.get("wins"), losses=summ.get("losses"),
                     fees=_num(summ.get("total_fees")), windows=summ.get("windows"), candidates=summ.get("candidates"),
                     skips=summ.get("skips"), equity=eq),
-        log=log[::-1][:30])
+        log=log[::-1][:30], pairlock=_pairlock(d, now) if desk == "5m" else None)
+
+# v19: PAIR-LOCK (paper) summary for the 5m desk. Reads ONLY pairlock_fast/ files + its heartbeat; never writes.
+def _pairlock(d, now):
+    import datetime, zoneinfo
+    CT = zoneinfo.ZoneInfo("America/Chicago"); pd = os.path.join(d, "pairlock_fast")
+    day = datetime.datetime.fromtimestamp(now, CT).strftime("%Y-%m-%d")
+    hb = _rj(os.path.join(d, "heartbeat_pairlock_fast.json")) or {}; ht = _ts(hb.get("ts"))
+    opp = _tail(os.path.join(pd, "opportunities.jsonl")); tr = _tail(os.path.join(pd, "paper_trades.jsonl"))
+    wins = _tail(os.path.join(pd, "windows.jsonl"))
+    fills = [r for r in tr if r.get("type") == "fill"]; sets = {r.get("slug"): r for r in tr if r.get("type") == "settle"}
+    tday = lambda r: str(r.get("signal_ct") or r.get("open_ct") or r.get("logged_ct") or "")[:10] == day
+    att = [f for f in fills if f.get("legs")]; pairs = [f for f in att if f.get("status") == "pair"]
+    naked = [f for f in att if str(f.get("status", "")).startswith("naked")]
+    sp = [sets[f["slug"]] for f in pairs if f.get("slug") in sets]
+    e = [_num(s.get("edge_per_share")) for s in sp if _num(s.get("edge_per_share")) is not None]
+    best = [_num((w.get("best") or {}).get("sum_per_share")) for w in wins if tday(w)]; best = [b for b in best if b is not None]
+    last = []
+    for f in att[-5:][::-1]:
+        s = sets.get(f.get("slug")) or {}; sh = _num(f.get("shares")) or 0
+        last.append(dict(t=_ts(f.get("start")) and f.get("start"), ct=str(f.get("signal_ct") or "")[11:16], status=f.get("status"),
+                         cpp=round(f["cost"] / sh, 4) if sh and _num(f.get("cost")) is not None else None, net=_num(s.get("net_pnl"))))
+    return dict(hb_age=round(now - ht, 1) if ht else None, paused=hb.get("risk_paused"), gate=0.98,
+                pnl=round(sum(_num(s.get("net_pnl")) or 0 for s in sets.values()), 2), settled=len(sets),
+                spotted_today=sum(1 for o in opp if tday(o)), filled_today=sum(1 for f in pairs if tday(f)),
+                pairs=len(pairs), days=len({s.get("ct_day") for s in sp if s.get("ct_day")}),
+                edge_c=round(sum(e) / len(e) * 100, 2) if e else None,
+                naked_pct=round(len(naked) / len(att) * 100, 1) if att else None,
+                windows_today=len(best), best_today=min(best) if best else None, last=last)
 
 def _iso(v):
     try: return calendar.timegm(time.strptime(str(v)[:19], "%Y-%m-%dT%H:%M:%S"))
