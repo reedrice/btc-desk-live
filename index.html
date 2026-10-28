@@ -29,7 +29,7 @@
 .pn .t{background:var(--ti);color:#fff;font-weight:700;padding:2px 6px;display:flex;justify-content:space-between}.pn .t i{font-style:normal;color:#aaa}
 .pn.act .t{background:var(--tr)}.pn.act{border-color:#8a2f45}
 .pn .b{padding:4px 6px}.r{display:flex;justify-content:space-between;padding:1px 2px}.r span:first-child{color:var(--mu)}.r.sel{background:#1f2a3a;color:#fff}
-.pn.dim{opacity:.35}.cdr{display:flex;justify-content:space-between;gap:6px;padding:1px 2px;white-space:nowrap;overflow:hidden}.cdr .cd{color:var(--go);font-variant-numeric:tabular-nums}.cdr .cd.st{color:#ffcf5c}.cdr span{overflow:hidden;text-overflow:ellipsis}.pn.flash{box-shadow:0 0 0 2px var(--te),0 0 18px var(--te)}
+.pn.dim{opacity:.35}.bet{padding:3px 2px;border-top:1px solid rgba(255,255,255,.08)}.bet .pl{white-space:normal;overflow-wrap:anywhere;font-size:.92em;line-height:1.25}.betw{max-height:130px;overflow-y:auto;overflow-x:hidden}.bet .b{color:#fff}.bet .cd{white-space:normal;font-variant-numeric:tabular-nums;color:var(--go)}.bet .cd.ok{color:#3dff9a}.bet .cd.bad{color:#ff4d6d}.bet .cd.st{color:#ffcf5c}.lg{font-size:.78em;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;padding-top:2px}.cdr{display:flex;justify-content:space-between;gap:6px;padding:1px 2px;white-space:nowrap;overflow:hidden}.cdr .cd{color:var(--go);font-variant-numeric:tabular-nums}.cdr .cd.st{color:#ffcf5c}.cdr span{overflow:hidden;text-overflow:ellipsis}.pn.flash{box-shadow:0 0 0 2px var(--te),0 0 18px var(--te)}
 .fl{position:absolute;width:230px}
 .blocks{display:flex;gap:2px;margin-top:4px}.blocks span{flex:1;height:10px;background:#23233a}.blocks .w{background:var(--pu)}.blocks .l{background:var(--pk)}
 .mini{display:block;width:100%;height:26px;margin-top:4px}
@@ -160,10 +160,29 @@ function layout(){document.querySelectorAll('.tg button').forEach(b=>b.classList
   if(mode=='both'){want.forEach(k=>{if(!cmps[k]){cmps[k]=cmpT.content.firstElementChild.cloneNode(true);set(cmps[k],'dn',k);set(cmps[k],'dn2',k)}desks_el().appendChild(cmps[k])});poll();return}
   want.forEach(k=>{if(!desks[k])desks[k]=build(k);desks_el().appendChild(desks[k].el)});requestAnimationFrame(()=>want.forEach(k=>geom(desks[k])));poll()}
 const cmps={}; // v7: simple comparison cards for 'both'
-// v10: open-position countdown. Rows carry data-end/data-lag; tickCD() rewrites them every second client-side.
-function cdRows(d,max){const op=d.open_positions||[];if(!op.length)return '';return op.slice(0,max).map(x=>`<div class="cdr"><span>${x.side||''} @${x.entry!=null?Math.round(x.entry*100)+'¢':'?'}</span><span class="cd" data-end="${x.end_ts}" data-lag="${x.settle_lag_s||''}"></span></div>`).join('')}
+// v11: plain-English open bets (for friends with no context). Each bet renders static lines + a .cd row that
+// tickCD() rewrites every second: countdown while open; after close "waiting for official result" with the
+// measured typical lag (settle_lag_s = median official settle delay), expected-by clock time CT and elapsed,
+// plus a provisional call from the final TWAP60; once settled, "WON/LOST" shows for 2 min, then the row hides.
+const ctT=t=>new Date(t*1000).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'});
+const usd=(v,dp=2)=>v==null?'—':'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});
+const LEGEND=`<div class="lg" title="Each bet is on whether Bitcoin's price is higher at the end of a 5-minute (or 15-minute) window than at the start. Paper money only.">ⓘ What is this? Bets on whether Bitcoin ends each 5-/15-min window higher than it started. Paper money only.</div>`;
+function cdRows(d,max,compact){const op=d.open_positions||[];if(!op.length)return '';return '<div class="betw">'+op.slice(0,max).map(x=>{
+  const side=(x.side||'?').toUpperCase(),dir=side==='UP'?'goes UP (or ties)':'goes DOWN';
+  const head=`<div class="pl b">${x.pair&&x.pays_up===x.pays_down?'Locked bet (bought UP and DOWN) for':'Bet: BTC '+dir+' in'} the ${ctT(x.start_ts)}–${ctT(x.end_ts)} CT window</div>`;
+  let pay;if(x.pair){const lo=Math.min(x.pays_up,x.pays_down);pay=`Bought both sides: cost ${usd(x.cost)} → pays ${x.pays_up===x.pays_down?usd(lo)+' either way':usd(x.pays_up)+' if UP / '+usd(x.pays_down)+' if DOWN'}${x.exited?' (cashed out part early)':''}`}
+  else{const st=x.stake||14,pr=x.entry;pay=`Paid ${pr!=null?Math.round(pr*100)+'¢':'?'} per $1 share (${usd(st,0)} bet → pays ${pr?usd(st/pr):'—'} if right)${x.exited?' · cashed out early':''}`}
+  const tgt=x.ptb!=null?`<div class="pl">${x.pair?'Main pick '+side+' · ':''}Target: end price ${side==='UP'?'≥':'<'} start price ${usd(x.ptb)}</div>`:'';
+  const j=encodeURIComponent(JSON.stringify(x));
+  return compact?`<div class="bet" data-j="${j}">${head}<div class="pl cd"></div></div>`:`<div class="bet" data-j="${j}">${head}<div class="pl">${pay}</div>${tgt}<div class="pl cd"></div></div>`}).join('')+'</div>'+LEGEND}
 function mmss(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
-function tickCD(){const now=Date.now()/1000;document.querySelectorAll('.cd[data-end]').forEach(c=>{const e=+c.dataset.end,lag=+c.dataset.lag;if(now<e){c.textContent='closes in '+mmss(e-now);c.classList.remove('st')}else{c.textContent='settling… '+mmss(now-e)+(lag?' (~'+Math.round(lag/60)+'m)':'');c.classList.add('st')}})}
+function lead(x,px){if(x.pair&&x.pays_up===x.pays_down&&x.cost!=null)return{lock:x.pays_up-x.cost};if(px==null||x.ptb==null)return null;const up=px>=x.ptb,me=(x.side||'').toLowerCase()==='up';return{win:up===me,by:Math.abs(px-x.ptb)}}
+function tickCD(){const now=Date.now()/1000;document.querySelectorAll('.bet[data-j]').forEach(el=>{let x;try{x=JSON.parse(decodeURIComponent(el.dataset.j))}catch(e){return}
+  const c=el.querySelector('.cd');let t,cls='';
+  if(x.result){if(now-(x.result.ts||now)>120){el.style.display='none';return}const w=x.result.win;t=`${w?'WON':'LOST'} ${x.result.pnl!=null?(x.result.pnl>=0?'+':'-')+usd(Math.abs(x.result.pnl)):''} · Bitcoin went ${String(x.result.outcome||'').toUpperCase()}`;cls=w?'ok':'bad'}
+  else if(now<x.end_ts){const l=lead(x,x.now_twap!=null?x.now_twap:x.now_px);t=(l&&l.lock!=null?`Profit locked in: ${l.lock>=0?'+':'-'}${usd(Math.abs(l.lock))} whichever way it goes · `:l?`Now ${usd(x.now_twap!=null?x.now_twap:x.now_px)} → ${l.win?'WINNING':'LOSING'} by ${usd(l.by)} · `:'')+'Window closes in '+mmss(x.end_ts-now);cls=l?(l.lock!=null?(l.lock>=0?'ok':'bad'):(l.win?'ok':'bad')):''}
+  else{const lag=x.settle_lag_s||330,l=lead(x,x.final_twap);t=`Window closed — waiting for official result (usually ~${Math.round(lag/60)} min, by ~${ctT(x.end_ts+lag)} CT) · ${mmss(now-x.end_ts)} so far`+(l&&l.lock==null?` · Looks like a ${l.win?'WIN':'LOSS'}`:'');cls='st'}
+  c.textContent=t;c.className='pl cd '+cls;c.title=t})}
 setInterval(tickCD,1000);
 function renderCmp(e,d){const t=d.tracker||{},p=d.predictor||{},r=d.risk||{},o=d.output||{},n=(o.wins||0)+(o.losses||0);
   const dt=d.desk=='15m'&&d.desk_total?d.desk_total:null,bp=dt?dt.pnl:o.pnl; // v9: 15m big number = desk-wide (v3+v4)
@@ -171,7 +190,7 @@ function renderCmp(e,d){const t=d.tracker||{},p=d.predictor||{},r=d.risk||{},o=d
   set(e,'wl',o.wins!=null?`${o.wins}W / ${o.losses}L · ${n?(o.wins/n*100).toFixed(1)+'%':D}`:D);set(e,'fees',o.fees!=null?'$'+f(o.fees):D);
   set(e,'rs',r.status?r.status+(r.reason?' · '+r.reason:''):D);set(e,'ls',r.loss_streak!=null?r.loss_streak+' / '+r.max_losses:D);set(e,'rd',r.red_days!=null?r.red_days+' / '+r.max_red:D);
   set(e,'win',t.start?ct(t.start)+'–'+ct(t.end)+' CT':D);set(e,'rem',t.seconds_remaining!=null?Math.round(t.seconds_remaining)+'s':D);
-  set(e,'dec',p.decision?p.decision.toUpperCase()+' '+(p.side||'')+(p.ask!=null?' @'+Math.round(p.ask*100)+'¢':''):D);set(e,'at',p.ts_ct?p.ts_ct+' CT':D);set(e,'op',(d.open_positions||d.open||[]).length);$(e,'cd').innerHTML=cdRows(d,3);tickCD();
+  set(e,'dec',p.decision?p.decision.toUpperCase()+' '+(p.side||'')+(p.ask!=null?' @'+Math.round(p.ask*100)+'¢':''):D);set(e,'at',p.ts_ct?p.ts_ct+' CT':D);set(e,'op',(d.open_positions||d.open||[]).length);$(e,'cd').innerHTML=cdRows(d,3,true);tickCD();
   $(e,'hb').innerHTML=['tracker','analyst','predictor','risk'].map(k=>{const a=((d.bots||{})[k]||{}).age;return `<div class="r"><span>${k}</span><span class="${a==null?'dim':a<150?'ok':'bad'}">${a==null?D:Math.round(a)+'s ago'+(a<150?'':' · stale')}</span></div>`}).join('')}
 const desks_el=()=>document.getElementById('desks');
 
@@ -237,7 +256,7 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   e.querySelector('[data-p=risk]').classList.toggle('act',r.status&&r.status!='active');
   const op=d.open||[];const yc=e.querySelector('[data-p=your_call]');yc.classList.toggle('dim',!op.length);
   const opp=d.open_positions||[];yc.classList.toggle('dim',!opp.length&&!op.length);
-  $(e,'open').innerHTML=opp.length?cdRows(d,4):'<div class="dim">no open positions</div>';tickCD();
+  $(e,'open').innerHTML=opp.length?cdRows(d,3):'<div class="dim">no open positions</div>';tickCD();
   set(e,'pc',o.candidates);set(e,'ps',o.skips);set(e,'po',op.length);
   // caption: window phase
   const rem=t.seconds_remaining,len=t.end&&t.start?t.end-t.start:null,ph=rem==null||!len?D:rem>len*.66?'EARLY WINDOW SCAN':rem>len*.33?'MID WINDOW TRACK':'LATE WINDOW EVAL';

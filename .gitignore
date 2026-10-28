@@ -4,3 +4,6 @@
 *.pid
 *.lock
 .firebase_secret
+__pycache__/
+*.bak*
+.auth
