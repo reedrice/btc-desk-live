@@ -17,10 +17,10 @@
 .stage canvas.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .left{position:absolute;left:0;top:0;width:190px;display:flex;flex-direction:column;gap:12px}
 .belt{position:absolute;left:196px;top:0;width:18px;height:600px;border-left:1px dashed #2a2a3d;border-right:1px dashed #2a2a3d;
- background:repeating-linear-gradient(0deg,transparent 0 10px,#1a1a28 10px 12px);background-size:100% 12px;animation:belt 1s linear infinite;overflow:visible}
+ background:repeating-linear-gradient(0deg,transparent 0 10px,#1a1a28 10px 12px);background-size:100% 12px;animation:belt 1s linear infinite;overflow:visible;clip-path:inset(0 -40px 0 -40px)}
 @keyframes belt{to{background-position:0 12px}}
 .chip{position:absolute;left:-14px;width:46px;font-size:8px;padding:1px 2px;border-radius:2px;text-align:center;color:#0d0d14;font-weight:700;white-space:nowrap;overflow:hidden;transition:opacity .3s}
-.spine{position:absolute;left:230px;top:0;width:28px;height:600px;background:#11111b;border:1px solid #1d1d2b}
+.spine{position:absolute;left:230px;top:0;width:28px;height:600px;clip-path:inset(0 -40px 0 -40px);background:#11111b;border:1px solid #1d1d2b}
 .spine .tick{position:absolute;left:2px;font-size:7px;color:#3a3a55}.spine .cur{position:absolute;left:4px;width:18px;height:6px;background:var(--pu)}
 .tag{position:absolute;font-size:8px;background:#5a1f2e;color:#ffb3c4;padding:0 2px;border-radius:2px}
 .right{position:absolute;left:330px;right:0;top:0;height:600px}
@@ -184,10 +184,10 @@ function drawLines(st){const cv=st.el.querySelector('canvas.lines'),g=cv.getCont
 const KIND={window:['#ffcf5c','tracker'],tick:['#3fd6b8','tracker'],signal:['#8b7bff','analyst'],cand:['#ff5c8a','predictor'],skip:['#9a9ab0','predictor'],settle:['#5ce0a0','risk']};
 function spawn(st,kind,label){const belt=st.el.querySelector('.belt'),c=document.createElement('div');c.className='chip';c.style.background=KIND[kind][0];c.textContent=label;const y0=-st.el.querySelectorAll('.belt .chip').length*22;c.style.top=y0+'px';c.dataset.y=y0;c.dataset.to=KIND[kind][1];belt.appendChild(c);st.queue.push(c)}
 function moveBelt(st){for(const c of st.el.querySelectorAll('.belt .chip')){let y=+c.dataset.y+0.8;c.dataset.y=y;c.style.top=y+'px';
-  if(y>280&&!st.busy&&c.parentNode.classList.contains('belt'))grab(st,c);else if(y>590)c.remove()}}
+  if(y>520)c.style.opacity=Math.max(0,(560-y)/40);if(y>280&&y<520&&!st.busy&&c.parentNode.classList.contains('belt'))grab(st,c);else if(y>=560)c.remove()}}
 function grab(st,c){st.busy=true;const car=st.car;car.appendChild(c);c.style.top='-6px';
   const p=st.el.querySelector(`.pn[data-p="${c.dataset.to}"]`),R=st.el.querySelector('.stage').getBoundingClientRect(),r=p.getBoundingClientRect();
-  car.style.left=(r.left-R.left+20)+'px';car.style.top=(r.top-R.top+30)+'px';
+  car.style.left=Math.min(Math.max(r.left-R.left+20,0),R.width-70)+'px';car.style.top=Math.min(Math.max(r.top-R.top+30,0),R.height-30)+'px';
   setTimeout(()=>{c.remove();p.classList.add('flash');setTimeout(()=>p.classList.remove('flash'),500);car.style.left='205px';car.style.top='280px';setTimeout(()=>st.busy=false,1100)},1150)}
 function detect(st,d){const P=st.prev,t=d.tracker||{},b=d.bots||{},pr=d.predictor||{},o=d.output||{};
   if(P.slug&&t.slug!=P.slug)spawn(st,'window','win '+(t.start?ct(t.start):''));
@@ -234,7 +234,7 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   set(e,'cap',new Date().toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour12:false,hour:'2-digit',minute:'2-digit'})+' · '+ph);
   set(e,'capsub',`${o.windows??D} windows → ${o.candidates??D} calls → ${o.skips??D} skips → ${o.wins??D}W/${o.losses??D}L → ${op.length} open`);
   // spine red tags: real per-call P&L deltas from equity curve
-  const sp=e.querySelector('.spine');sp.querySelectorAll('.tag').forEach(x=>x.remove());dif.forEach((x,i)=>{const g=document.createElement('div');g.className='tag';g.style.top=(20+i*36)+'px';g.style.left=(i%2?-30:-24)+'px';g.textContent=(x>=0?'+':'')+x.toFixed(1);sp.appendChild(g)});
+  const sp=e.querySelector('.spine');sp.querySelectorAll('.tag').forEach(x=>x.remove());dif.slice(-15).forEach((x,i)=>{const g=document.createElement('div');g.className='tag';g.style.top=(20+i*36)+'px';g.style.left=(i%2?-30:-24)+'px';g.textContent=(x>=0?'+':'')+x.toFixed(1);sp.appendChild(g)});
   st.cur.style.top=len&&rem!=null?((1-rem/len)*590)+'px':'0';
   // TOTAL (kept from v5)
   const tv=e.querySelector('.tot .tv');tv.textContent=money(o.pnl);tv.className='tv '+(o.pnl==null?'':o.pnl>=0?'pos':'neg');set(e,'twl',o.wins!=null?o.wins+'W / '+o.losses+'L':D);set(e,'tfe',o.fees!=null?'$'+f(o.fees):D);
@@ -248,7 +248,6 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   const pn=$(e,'pnl');pn.textContent=o.pnl==null?D:(o.pnl<0?'-':'')+'$'+Math.abs(o.pnl).toFixed(2);
   set(e,'o1',o.wins!=null?`${o.wins} won × ${o.losses} lost · paper`:D);set(e,'o2',`calls ${o.candidates??D}   skips ${o.skips??D}   fees $${f(o.fees)}`);
   const n=(o.wins||0)+(o.losses||0),fl=n?Math.round(o.wins/n*30):0;$(e,'pb').innerHTML=Array.from({length:30},(_,i)=>`<span class="${i<fl?'f':''}"></span>`).join('')}
-
 
 // ---------- encrypted gist relay (GitHub Pages build) ----------
 const GIST='https://gist.githubusercontent.com/reedrice/4a5f16a520bf0ca912e0064d9ba8fe40/raw/live.json';

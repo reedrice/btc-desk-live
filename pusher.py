@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 D = os.path.dirname(os.path.abspath(__file__))
-INTERVAL = float(os.environ.get('INTERVAL', 8))  # gist edits: keep < ~450/h (GitHub secondary limits)
+INTERVAL = float(os.environ.get('INTERVAL', 30))  # gist edits: keep < ~450/h (GitHub secondary limits)
 GID = open(os.path.join(D, '.gist_id')).read().strip()
 pw = open(os.path.join(D, '.passphrase')).read().strip().encode()
 salt = secrets.token_bytes(16)
@@ -26,7 +26,7 @@ while True:
         r = subprocess.run(['gh', 'api', '-X', 'PATCH', f'gists/{GID}', '--input', '-', '--silent'],
                            input=body.encode(), capture_output=True, timeout=30)
         print(time.strftime('%H:%M:%S'), 'ok' if r.returncode == 0 else 'ERR ' + r.stderr.decode()[:200], len(blob), flush=True)
-        if r.returncode: time.sleep(30)
+        if r.returncode: time.sleep(180)
     except Exception as e:
         print(time.strftime('%H:%M:%S'), 'EXC', e, flush=True); time.sleep(10)
     time.sleep(max(1, INTERVAL - (time.time() - t0)))
