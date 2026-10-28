@@ -261,7 +261,7 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   // caption: window phase
   const rem=t.seconds_remaining,len=t.end&&t.start?t.end-t.start:null,ph=rem==null||!len?D:rem>len*.66?'EARLY WINDOW SCAN':rem>len*.33?'MID WINDOW TRACK':'LATE WINDOW EVAL';
   set(e,'cap',new Date().toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour12:false,hour:'2-digit',minute:'2-digit'})+' · '+ph);
-  set(e,'capsub',`${o.windows??D} windows → ${o.candidates??D} calls → ${o.skips??D} skips → ${o.wins??D}W/${o.losses??D}L → ${op.length} open`);
+  set(e,'capsub',`${o.windows??D} windows → ${o.candidates??D} calls → ${o.skips??D} skips → ${(d.desk_total||o).wins??D}W/${(d.desk_total||o).losses??D}L → ${op.length} open`);
   // spine red tags: real per-call P&L deltas from equity curve
   const sp=e.querySelector('.spine');sp.querySelectorAll('.tag').forEach(x=>x.remove());dif.slice(-15).forEach((x,i)=>{const g=document.createElement('div');g.className='tag';g.style.top=(20+i*36)+'px';g.style.left=(i%2?-30:-24)+'px';g.textContent=(x>=0?'+':'')+x.toFixed(1);sp.appendChild(g)});
   st.cur.style.top=len&&rem!=null?((1-rem/len)*590)+'px':'0';
@@ -274,7 +274,7 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
     return `<div class="r"><span><span style="color:${BOT_COLOR[k]}">◆</span> w${i+1} ${k}</span><span><span class="seg">${Array.from({length:20},(_,j)=>`<span class="${j<fr?'f':''}"></span>`).join('')}</span> ${age!=null?Math.round(age)+'s':D} <span class="${s=='run'?'info':s=='stale'?'bad':'dim'}">${s}</span></span></div>`}).join('');
   const hc=$(e,'histo'),hw=hc.width=hc.clientWidth*2,hh=hc.height=60,hg=hc.getContext('2d');const mx=Math.max(1,...dif.map(Math.abs));
   dif.forEach((x,i)=>{const bw=hw/Math.max(dif.length,1);hg.fillStyle=x>=0?'#8b7bff':'#ff5c8a';const bh=Math.abs(x)/mx*(hh-6);hg.fillRect(i*bw+2,hh-bh,bw-4,bh)});
-  const pn=$(e,'pnl');pn.textContent=o.pnl==null?D:(o.pnl<0?'-':'')+'$'+Math.abs(o.pnl).toFixed(2);
+  const pn=$(e,'pnl'),_P=d.desk_total?d.desk_total.pnl:o.pnl;pn.textContent=_P==null?D:(_P<0?'-':'')+'$'+Math.abs(_P).toFixed(2);
   {const t=d.desk_total||o;set(e,'o1',t.wins!=null?`${t.wins} won × ${t.losses} lost · paper`:D)}set(e,'o2',`calls ${o.candidates??D}   skips ${o.skips??D}   fees $${f(o.fees)}`);
   const _t=d.desk_total||o,n=(_t.wins||0)+(_t.losses||0),fl=n?Math.round(_t.wins/n*30):0;$(e,'pbl').textContent=n?`Win rate ${Math.round(_t.wins/n*100)}% (${_t.wins} of ${n})`:'Win rate — (no settled bets yet)';$(e,'pb').innerHTML=Array.from({length:30},(_,i)=>`<span class="${i<fl?'f':''}"></span>`).join('')}
 
