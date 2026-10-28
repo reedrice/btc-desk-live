@@ -29,3 +29,13 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - UI: your_call card lists open positions with a client-side 1s ticker (`tickCD`): "closes in m:ss" until end_ts,
   then "settling… m:ss" elapsed (15m appends "(~30m)" expected lag). 'both' view shows compact rows under "open calls".
 - This index.html also picked up the v9 15m desk-wide/v4 total display from the local dashboard.
+
+## v11 (2026-10-28 ~3:30 AM CT) — plain-English open bets + README
+- neon_api.py `_positions()` (add-only `open_positions` fields): cost, pays_up/pays_down, pair, exited, ptb (start price),
+  now_twap/now_px (live window only), final_twap (= next window's price_to_beat), settle_lag_s (median official settle ts −
+  window end from predictions.jsonl; 5m ≈ 330 s from 85 samples; 15m falls back to 1800 s until ≥5 samples), result (settled <150 s ago).
+- index.html `cdRows/tickCD`: each bet reads "Bet: BTC goes UP (or ties) in the 3:15–3:20 AM CT window", payout line, target line,
+  live WINNING/LOSING (or "Profit locked in" for pair locks), countdown → "waiting for official result (usually ~N min, by ~h:mm CT)"
+  + provisional "Looks like a WIN/LOSS" → WON/LOST for 2 min. Compact form in "both". ⓘ legend line with tooltip.
+- README.md added: what it is, how the desk works, fork-only (no PRs/contributions), secrets not included.
+- Backups: index.html.bak11 (and index_neon.html.bak11 / neon_api.py.bak11 in btc5m-dashboard).
