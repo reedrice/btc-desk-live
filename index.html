@@ -60,6 +60,13 @@ body.both #desks{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px
 .cmp{background:#14141f;border:1px solid #2a2a45;padding:16px;font-size:13px}.cmp h2{margin:0 0 10px;color:#fff;font-size:15px;letter-spacing:2px;background:#2a2560;padding:4px 10px}
 .cmp .ctot{font-size:40px;font-weight:700;margin:4px 0 2px}.cmp .lbl{color:var(--go);letter-spacing:2px;font-weight:700}
 .cmp .r{padding:4px 2px;border-bottom:1px solid #1d1d2b}.cmp .sec{color:var(--pu);margin:12px 0 4px;font-size:11px;letter-spacing:1px}
+.pmc{background:#11131c;border:1px solid #23263a;border-radius:10px;padding:10px 12px 8px;margin:10px 0;max-width:100%;box-sizing:border-box}
+.pmh{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}.pmh small{display:block;font-size:10px;color:#8a8fa6;margin-bottom:2px}.pmh b{font-size:18px;color:#e6e8f2;font-variant-numeric:tabular-nums}.pmh b.g,.pmh i.g{color:#3dd68c}.pmh b.r,.pmh i.r{color:#ff4d6d}.pmh i{font-style:normal;margin-left:4px}
+.pmsep{width:1px;height:30px;background:#2a2d40}.pm-cd{margin-left:auto;border:1.5px solid #c9ccd9;border-radius:14px;padding:3px 10px;font-size:13px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.pm-cv{display:block;width:100%;height:170px;margin-top:6px}
+.pmb{display:flex;gap:8px;align-items:center;margin-top:6px}.pmb span.pm-up,.pmb span.pm-dn{flex:1;text-align:center;padding:6px 0;border-radius:8px;font-weight:700;font-size:13px}.pm-up{background:#1f9d55;color:#eafff2}.pm-dn{background:#e5484d;color:#fff1f2}.pmb .ti{float:none;margin:0}
+section.desk>.pmc{margin-top:84px}@media(min-width:1480px){section.desk .pmc{position:absolute;top:156px;left:1170px;right:12px;margin:0;z-index:3}section.desk .pmc .pm-cv{height:220px}}
+section.cmp .pmc .pm-cv{height:130px}
 </style></head><body>
 <div id="top"><span>GRAPH <b id="gname">chief-night-01</b></span><span>NODES <b id="nN">—</b></span><span>EDGES <b id="nE">—</b></span><span>WORKERS <b id="nW">—</b></span><span class="lv">\ LIVE</span>
 <span class="mid">▣ GROK BOT / CHIEF</span><span class="tg"><button data-m="5m">5m</button><button data-m="15m">15m</button><button data-m="both">both</button></span>
@@ -183,7 +190,7 @@ function tickCD(){const now=Date.now()/1000;document.querySelectorAll('.bet[data
     bd.textContent=`${w?'WON':'LOST'} ${p!=null?(p>=0?'+':'-')+usd(Math.abs(p)):''}`;bd.className='bdg big '+(w?'ok':'bad');el.classList.add('fin');return}
   const open=now<x.end_ts,l=lead(x,open?(x.now_twap!=null?x.now_twap:x.now_px):x.final_twap);
   if(open){const fr=Math.max(0,Math.min(1,(x.end_ts-now)/((x.end_ts-x.start_ts)||300)));rf.style.strokeDasharray=C;rf.style.strokeDashoffset=C*(1-fr);rt.textContent=mmss(x.end_ts-now);el.classList.remove('wait');bd.textContent='';bd.className='bdg'}
-  else{const lag=x.settle_lag_s||330,eta=Math.max(0,x.end_ts+lag-now);const ef=Math.max(.02,Math.min(1,(now-x.end_ts)/lag));rf.style.strokeDasharray=C;rf.style.strokeDashoffset=C*(1-ef);rt.textContent=eta>0?'~'+Math.ceil(eta/60)+'m':'…';el.classList.add('wait');
+  else{const lag=x.settle_lag_s||330,eta=x.end_ts+lag-now;const ef=Math.max(.02,Math.min(1,(now-x.end_ts)/lag));rf.style.strokeDasharray=C;rf.style.strokeDashoffset=C*(1-ef);rt.textContent=eta>=60?'~'+Math.ceil(eta/60)+'m':eta>0?mmss(eta):'+'+mmss(-eta);el.classList.add('wait');
     if(l&&l.lock==null){bd.textContent=l.win?'WIN?':'LOSS?';bd.className='bdg '+(l.win?'ok':'bad')}}
   if(l&&l.lock==null){const sc=(x.end_ts-x.start_ts)>600?120:60,m=(l.win?1:-1)*(x.side&&x.side.toLowerCase()==='up'?1:1),pos=50+Math.max(-48,Math.min(48,l.d/sc*48));
     const mk=q('.mk'),fl=q('.fl'),g=q('.gap');if(mk){mk.style.left=pos+'%';fl.style.left=Math.min(50,pos)+'%';fl.style.width=Math.abs(pos-50)+'%';fl.className='fl '+(l.win?'ok':'bad');
@@ -306,7 +313,7 @@ async function liveGet(k){if(!LIVE)await liveFetch();if(!LIVE)throw new Error('n
   const age=Math.round(Date.now()/1000-LTS);const el=document.getElementById('relayAge');if(el)el.textContent='data '+age+'s old';return LIVE[k]}
 // ---------- poll 1.5s ----------
 async function poll(){const want=mode=='both'?['5m','15m']:[mode];let W=0,N=0;
-  for(const k of want){try{const t0=performance.now(),d=await liveGet(k);
+  for(const k of want){try{const t0=performance.now(),d=await liveGet(k);PM.dd[k]=d;
     if(mode=='both'){renderCmp(cmps[k],d)}else{const st=desks[k];detect(st,d);st.data=d;render(st)}W+=Object.values(d.bots||{}).filter(b=>b.age!=null&&b.age<150).length;N+=Object.keys(d.bots||{}).length;
     okl.textContent=`[ok] ${k} api ${Math.round(performance.now()-t0)}ms`}catch(err){okl.textContent='[err] '+k+' '+(err.message||'')}}
   nN.textContent=N+want.length*5;nE.textContent=mode=='both'?D:want.reduce((s,k)=>s+desks[k].lines.length,0);nW.textContent=W}
@@ -317,4 +324,47 @@ function frame(){frames++;frm.textContent=String(frames).padStart(4,'0');frm2.te
 setInterval(frame,33); // interval (not rAF) so it also runs in background tabs/headless
 window.onresize=()=>Object.values(desks).forEach(st=>st.el.isConnected&&geom(st));
 layout();
+/* v17: Polymarket-mirror chart (client-side only: Polymarket live-data WS chainlink btc/usd + gamma slug->tokens + CLOB midpoint). No Firebase/GitHub use. */
+const PM={buf:[],ws:null,st:{},dd:{}};
+function pmWS(){try{const w=new WebSocket('wss://ws-live-data.polymarket.com');PM.ws=w;
+  w.onopen=()=>{w.send(JSON.stringify({action:'subscribe',subscriptions:[{topic:'crypto_prices_chainlink',type:'*',filters:'{"symbol":"btc/usd"}'}]}));PM.ping=setInterval(()=>{try{w.send('PING')}catch(e){}},10000)};
+  w.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}const p=m.payload||{};const pts=p.data?p.data.map(x=>[x.timestamp/1000,x.value]):p.value!=null?[[p.timestamp/1000,p.value]]:[];
+    for(const q of pts){const b=PM.buf;if(!b.length||q[0]>b[b.length-1][0])b.push(q)}const cut=Date.now()/1000-1900;while(PM.buf.length&&PM.buf[0][0]<cut)PM.buf.shift()};
+  w.onclose=()=>{clearInterval(PM.ping);setTimeout(pmWS,3000)}}catch(e){setTimeout(pmWS,5000)}}
+pmWS();
+const PMLEN={'5m':300,'15m':900};
+async function pmRoll(k){const L=PMLEN[k],now=Date.now()/1000,s=Math.floor(now/L)*L,S=PM.st[k]||(PM.st[k]={});
+  if(S.start!==s){S.start=s;S.end=s+L;S.tok=null;S.up=null;S.ptb=null;S.slug=`btc-updown-${k}-${s}`;
+    try{const r=await fetch('https://gamma-api.polymarket.com/events?slug='+S.slug),j=await r.json(),m=j[0].markets[0];const ids=JSON.parse(m.clobTokenIds),oc=JSON.parse(m.outcomes);S.tok=ids[oc.indexOf('Up')<0?0:oc.indexOf('Up')];const pb=(j[0].eventMetadata||{}).priceToBeat;if(pb)S.ptb=pb}catch(e){}}
+  if(S.ptb==null){const h=PM.buf.find(q=>Math.abs(q[0]-S.start)<0.6);if(h){S.ptb=h[1];S.src='Chainlink at window start'}}
+  if(S.tok){try{const r=await fetch('https://clob.polymarket.com/midpoint?token_id='+S.tok),j=await r.json();if(j.mid!=null)S.up=+j.mid}catch(e){}}}
+setInterval(()=>['5m','15m'].forEach(k=>{if(document.querySelector('.pmc[data-k="'+k+'"]'))pmRoll(k)}),4000);
+const pmUsd=v=>'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pmCT=t=>new Date(t*1000).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',second:'2-digit'}).replace(/\s?[AP]M/,'');
+function pmEl(k){const e=document.createElement('div');e.className='pmc';e.dataset.k=k;e.innerHTML=`<div class="pmh"><div><small>Price to beat</small><b class="pm-ptb">—</b></div><div class="pmsep"></div><div><small>Current price <span class="pm-ch"></span></small><b class="pm-cur">—</b></div><span class="pm-cd">—</span></div>
+<canvas class="pm-cv"></canvas><div class="pmb"><span class="pm-up">Up —</span><span class="pm-dn">Down —</span><span class="ti pm-i" title="Mirror of Polymarket's BTC Up/Down ${k} chart for the current window. Orange = live BTC price (Chainlink btc/usd via Polymarket's live feed). Dashed line = price to beat (Chainlink price at window start; if this page opened mid-window it falls back to the desk's TWAP60 start price). Up/Down % = Polymarket order-book midpoint. Ends ≥ target → UP wins.">ⓘ</span></div>`;return e}
+function pmMount(){document.querySelectorAll('section.desk, section.cmp').forEach(sec=>{if(sec.querySelector('.pmc'))return;const k=(sec.querySelector('.x-dn')||{}).textContent||'';if(!PMLEN[k])return;const e=pmEl(k);
+  if(sec.classList.contains('cmp')){const t=sec.querySelector('.ctot');t?t.after(e):sec.appendChild(e)}else{const st=sec.querySelector('.stage');st?st.after(e):sec.appendChild(e)}})}
+function pmDraw(){pmMount();const now=Date.now()/1000;document.querySelectorAll('.pmc').forEach(e=>{const k=e.dataset.k,S=PM.st[k]||{},cv=e.querySelector('.pm-cv');if(!S.start)return;
+  let ptb=S.ptb;if(ptb==null){const d=PM.dd[k];const t=d&&d.tracker;if(t&&t.ptb!=null)ptb=t.ptb}
+  const pts=PM.buf.filter(q=>q[0]>=S.start-2&&q[0]<=S.end),cur=PM.buf.length?PM.buf[PM.buf.length-1][1]:null;
+  e.querySelector('.pm-ptb').textContent=ptb!=null?pmUsd(ptb):'—';const ce=e.querySelector('.pm-cur');ce.textContent=cur!=null?pmUsd(cur):'—';
+  const dif=cur!=null&&ptb!=null?cur-ptb:null,up=dif!=null&&dif>=0;ce.className='pm-cur '+(dif==null?'':up?'g':'r');
+  e.querySelector('.pm-ch').innerHTML=dif==null?'':`<i class="${up?'g':'r'}">${up?'▲':'▼'} ${pmUsd(Math.abs(dif))}</i>`;
+  const left=S.end-now;e.querySelector('.pm-cd').textContent=left>0?Math.floor(left/60)+':'+String(Math.floor(left%60)).padStart(2,'0'):'0:00';
+  e.querySelector('.pm-up').textContent='Up '+(S.up!=null?Math.round(S.up*100)+'%':'—');e.querySelector('.pm-dn').textContent='Down '+(S.up!=null?Math.round((1-S.up)*100)+'%':'—');
+  const W=cv.clientWidth,H=cv.clientHeight,dpr=window.devicePixelRatio||1;if(!W||!H)return;if(cv.width!==W*dpr||cv.height!==H*dpr){cv.width=W*dpr;cv.height=H*dpr}
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);const PR=58,PB=16,pw=W-PR,ph=H-PB-6;
+  const vs=pts.map(q=>q[1]).concat(ptb!=null?[ptb]:[]);if(!vs.length)return;let lo=Math.min(...vs),hi=Math.max(...vs);const pad=Math.max((hi-lo)*.15,3);lo-=pad;hi+=pad;
+  const X=t=>(t-S.start)/(S.end-S.start)*pw,Y=v=>6+(hi-v)/(hi-lo)*ph;
+  c.font='10px ui-monospace,monospace';c.fillStyle='#7d8296';c.strokeStyle='rgba(255,255,255,.06)';c.lineWidth=1;
+  for(let i=0;i<=3;i++){const v=hi-(hi-lo)*(i+.5)/4,y=Y(v);c.beginPath();c.moveTo(0,y);c.lineTo(pw,y);c.stroke();c.fillText('$'+Math.round(v).toLocaleString('en-US'),pw+6,y+3)}
+  for(let i=0;i<=3;i++){const t=S.start+(S.end-S.start)*i/3;const s=pmCT(t);c.fillText(s,Math.min(Math.max(0,X(t)-c.measureText(s).width/2),pw-c.measureText(s).width),H-3)}
+  if(pts.length>1){const g=c.createLinearGradient(0,6,0,6+ph);g.addColorStop(0,'rgba(247,147,26,.28)');g.addColorStop(1,'rgba(247,147,26,0)');
+    c.beginPath();pts.forEach((q,i)=>i?c.lineTo(X(q[0]),Y(q[1])):c.moveTo(X(q[0]),Y(q[1])));const lx=X(pts[pts.length-1][0]);c.lineTo(lx,6+ph);c.lineTo(X(pts[0][0]),6+ph);c.closePath();c.fillStyle=g;c.fill();
+    c.beginPath();pts.forEach((q,i)=>i?c.lineTo(X(q[0]),Y(q[1])):c.moveTo(X(q[0]),Y(q[1])));c.strokeStyle='#f7931a';c.lineWidth=1.8;c.lineJoin='round';c.stroke();
+    const lp=pts[pts.length-1];c.beginPath();c.arc(X(lp[0]),Y(lp[1]),3.5,0,7);c.fillStyle='#f7931a';c.fill();c.beginPath();c.arc(X(lp[0]),Y(lp[1]),3.5+2.5*Math.abs(Math.sin(now*3)),0,7);c.strokeStyle='rgba(247,147,26,.4)';c.lineWidth=1;c.stroke()}
+  if(ptb!=null){const y=Y(ptb);c.setLineDash([4,4]);c.strokeStyle='rgba(220,220,235,.55)';c.lineWidth=1;c.beginPath();c.moveTo(0,y);c.lineTo(pw,y);c.stroke();c.setLineDash([]);
+    const lb=pmUsd(ptb)+' target',tw=c.measureText(lb).width+14,lx=pw/2-tw/2;c.fillStyle='#1b1d29';c.strokeStyle='rgba(255,255,255,.18)';c.beginPath();c.roundRect?c.roundRect(lx,y-9,tw,18,9):c.rect(lx,y-9,tw,18);c.fill();c.stroke();c.fillStyle='#e6e8f2';c.fillText(lb,lx+7,y+3.5)}})}
+setInterval(pmDraw,500);
 </script><div id="relayAge" style="position:fixed;left:8px;bottom:4px;font:11px monospace;color:#7a7aa0;z-index:99"></div></body></html>

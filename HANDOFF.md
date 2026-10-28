@@ -44,3 +44,8 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - 3:55 AM CT (v14): settling ring = static thin gray track + solid yellow arc filling by elapsed/settle_lag, '~Xm' centered, no spin/hourglass. Backups *.bak14.
 - 4:10 AM CT (v15): open-bet tile grid uses minmax(0,1fr) middle col + shrinking/ellipsis payout chip + compact range '$15→$20–$41' so the ring never clips on mobile. Backups *.bak15.
 - 4:17 AM CT (v16): conveyor belt moved left:196→208px and P&L tags centered on it (translateX(-50%)), carrier home 205→217px; belt+tags now share center x≈217. Backups *.bak16.
+
+## v17 / v17b (2026-10-28 04:26 CDT)
+- v17b: settling ring text = countdown to end_ts+settle_lag_s (~Nm if >=60s, m:ss under), then +m:ss overdue (removed Math.max clamp).
+- v17: Polymarket-mirror chart (.pmc) per desk, client-only: ws-live-data.polymarket.com crypto_prices_chainlink btc/usd; gamma events?slug (priceToBeat, token ids, 1/window); clob midpoint every 4s. PTB fallback: gamma -> stream point at window start -> tracker.ptb. Mounted after .stage (mobile/narrow, margin-top 84px clears absolute .tot); >=1480px absolute in blank right column; cmp view after .ctot. Zero Firebase/GitHub/AI usage. Backup .bak17.
+
