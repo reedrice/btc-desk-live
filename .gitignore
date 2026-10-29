@@ -7,3 +7,5 @@
 __pycache__/
 *.bak*
 .auth
+pusher_status.json
+.pusher_status.tmp

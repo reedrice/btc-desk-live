@@ -201,7 +201,7 @@ function renderCmp(e,d){const t=d.tracker||{},p=d.predictor||{},r=d.risk||{},o=d
   const dt=d.desk_total||null,bp=dt?dt.pnl:o.pnl; // v11: both desks = one total from all scored settlements (netted per slug)
   const tv=$(e,'tot');tv.textContent=money(bp);tv.className='ctot x-tot '+(bp==null?'':bp>=0?'pos':'neg');
   {const W_=dt?dt.wins:o.wins,L_=dt?dt.losses:o.losses,N_=(W_||0)+(L_||0);set(e,'wl',W_!=null?`${W_}W / ${L_}L · ${N_?(W_/N_*100).toFixed(1)+'%':D}`:D)}set(e,'fees',o.fees!=null?'$'+f(o.fees):D);
-  set(e,'rs',r.status?r.status+(r.reason?' · '+r.reason:''):D);set(e,'ls',r.loss_streak!=null?r.loss_streak+' / '+r.max_losses:D);set(e,'rd',r.red_days!=null?r.red_days+' / '+r.max_red:D);
+  set(e,'rs',(r.status?r.status+(r.reason?' · '+r.reason:''):D)+(r.status?(r.gate&&!r.gate.entry_permitted?' · ENTRIES BLOCKED: '+r.gate.reason:'')+(d.publisher&&d.publisher.last_error?' · publisher: '+d.publisher.last_error:''):''));set(e,'ls',r.loss_streak!=null?r.loss_streak+' / '+r.max_losses:D);set(e,'rd',r.red_days!=null?r.red_days+' / '+r.max_red:D);
   set(e,'win',t.start?ct(t.start)+'–'+ct(t.end)+' CT':D);set(e,'rem',t.seconds_remaining!=null?Math.round(t.seconds_remaining)+'s':D);
   set(e,'dec',p.decision?p.decision.toUpperCase()+' '+(p.side||'')+(p.ask!=null?' @'+Math.round(p.ask*100)+'¢':''):D);set(e,'at',p.ts_ct?p.ts_ct+' CT':D);set(e,'op',(d.open_positions||d.open||[]).length);$(e,'cd').innerHTML=cdRows(d,3,true);tickCD();
   $(e,'hb').innerHTML=['tracker','analyst','predictor','risk'].map(k=>{const a=((d.bots||{})[k]||{}).age;return `<div class="r"><span>${k}</span><span class="${a==null?'dim':a<150?'ok':'bad'}">${a==null?D:Math.round(a)+'s ago'+(a<150?'':' · stale')}</span></div>`}).join('')}
@@ -265,8 +265,8 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   set(e,'wn',st.price.length+' samples · '+(t.cl_age!=null?'age '+f(t.cl_age,1)+'s':D));
   const dec=$(e,'dec');dec.textContent=p.decision?p.decision.toUpperCase():D;dec.className='badge x-dec '+(p.decision||'').toUpperCase();
   set(e,'side',p.side);set(e,'ask',p.ask!=null?Math.round(p.ask*100)+'¢':D);set(e,'ev',p.ev!=null?(p.ev>=0?'+':'')+f(p.ev,3):D);set(e,'at',p.ts_ct?p.ts_ct+' CT':D);set(e,'why',p.reason);
-  set(e,'kw',o.wins);set(e,'kl',o.losses);set(e,'st',r.status?(r.status+' · '+(r.reason||'')):D);ring($(e,'ring'),o.wins||0,o.losses||0);
-  e.querySelector('[data-p=risk]').classList.toggle('act',r.status&&r.status!='active');
+  set(e,'kw',o.wins);set(e,'kl',o.losses);set(e,'st',(r.status?(r.status+' · '+(r.reason||'')):D)+(r.status?(r.gate&&!r.gate.entry_permitted?' · ENTRIES BLOCKED: '+r.gate.reason:'')+(d.publisher&&d.publisher.last_error?' · publisher: '+d.publisher.last_error:''):''));ring($(e,'ring'),o.wins||0,o.losses||0);
+  e.querySelector('[data-p=risk]').classList.toggle('act',(r.status&&r.status!='active')||(r.gate&&!r.gate.entry_permitted));
   const op=d.open||[];const yc=e.querySelector('[data-p=your_call]');yc.classList.toggle('dim',!op.length);
   const opp=d.open_positions||[];yc.classList.toggle('dim',!opp.length&&!op.length);
   $(e,'open').innerHTML=opp.length?cdRows(d,3):'<div class="dim">no open positions</div>';tickCD();
@@ -306,9 +306,10 @@ async function liveApply(b){try{if(!b||b.ts<=LTS)return;
     try{if(!LKEY||LSALT!==b.salt){LKEY=await deriveKey(pw,ub(b.salt));LSALT=b.salt}
       const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(b.iv)},LKEY,ub(b.ct));
       const txt=await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-      LIVE=JSON.parse(txt);LTS=b.ts;localStorage.setItem('btcdesk_pw',pw);break}
+      LIVE=JSON.parse(txt);LTS=b.ts;{const rb=document.getElementById('relay-err');if(rb)rb.remove()}localStorage.setItem('btcdesk_pw',pw);break}
     catch(e){LKEY=null;localStorage.removeItem('btcdesk_pw');pw=null;if(tries>2)throw e}}
-  }catch(e){console.warn('relay',e)}}
+  }catch(e){console.warn('relay',e);relayErr(e)}}
+function relayErr(e){let b=document.getElementById('relay-err');if(!b){b=document.createElement('div');b.id='relay-err';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff4d6d;color:#fff;font:12px monospace;padding:4px 8px';document.body.appendChild(b)}b.textContent='[relay error] '+(e&&e.name==='OperationError'?'decryption failed (wrong passphrase or corrupt blob)':(e&&e.message)||e)+' · showing last good data';}
 async function liveGet(k){if(!LIVE)await liveFetch();if(!LIVE)throw new Error('no data');
   const age=Math.round(Date.now()/1000-LTS);const el=document.getElementById('relayAge');if(el)el.textContent='data '+age+'s old';return LIVE[k]}
 // ---------- poll 1.5s ----------
@@ -383,7 +384,7 @@ function plDraw(){document.querySelectorAll('section.desk, section.cmp').forEach
   const p=(PM.dd['5m']||{}).pairlock;if(!p)return;const q=c=>e.querySelector(c),D='—';
   const a=p.hb_age,dt=q('.dot');dt.style.background=a==null?'#555':a<30?'#3dd68c':a<90?'#ffcf5c':'#ff4d6d';dt.title=a==null?'no heartbeat':`heartbeat ${Math.round(a)}s ago${p.paused?' · paused by Risk':''}`;
   const pn=q('.pl-pnl');pn.textContent=(p.pnl<0?'-':p.pnl>0?'+':'')+'$'+Math.abs(p.pnl||0).toFixed(2);pn.className='big pl-pnl '+(p.pnl>0?'g':p.pnl<0?'rd':'mu');
-  q('.pl-sp').textContent=p.spotted_today??D;q('.pl-fi').textContent=p.filled_today??D;q('.pl-ed').textContent=p.edge_c==null?D:p.edge_c.toFixed(1);q('.pl-nk').textContent=p.naked_pct==null?D:p.naked_pct+'%';
+  q('.pl-sp').textContent=p.spotted_today??D;q('.pl-fi').textContent=p.filled_today??D;q('.pl-ed').textContent=p.edge_c==null?D:p.edge_c.toFixed(1);q('.pl-nk').textContent=p.naked_pct==null?D:p.naked_pct+'%'+(p.naked_verdict==='insufficient sample'?` (n=${p.naked_n}/50, insufficient sample)`:'');{let st=e.querySelector('.pl-st');if(!st){st=document.createElement('div');st.className='fr pl-st';e.querySelector('.pl-rows').before(st)}const why=(p.block_reasons||[]).join(', ');st.innerHTML=`<span class="${p.entry_permitted?'g':'rd'}">${p.entry_permitted?'ENTRIES ON':(p.latched?'LATCHED':p.manual_hold?'HELD':'BLOCKED')}</span>`+`<span class="mu" title="${why}">${why||''}</span>`+`<span title="settled matched-pair P&L (arbitrage)">pair ${(p.matched_pnl??0)>=0?'+':'-'}$${Math.abs(p.matched_pnl??0).toFixed(2)}</span>`+`<span title="settled naked-leg P&L (directional, not arbitrage)">naked ${(p.naked_pnl??0)>=0?'+':'-'}$${Math.abs(p.naked_pnl??0).toFixed(2)}</span>`+`<span class="mu" title="${p.unrealized||''}">open ${p.open_n??0}</span>`}
   const fr=Math.min(1,(p.pairs||0)/200)*0.5+Math.min(1,(p.days||0)/5)*0.5;q('.pl-bar').style.width=(fr*100)+'%';q('.pl-pgl').textContent=`${p.pairs}/200 · ${p.days}/5d`;
   q('.pl-pgt').title=`Risk sign-off progress: ${p.pairs} of 200 pairs, ${p.days} of 5 CT days. Also needs positive after fees on 4 of 5 days and a 20-window spot-check.`;
   q('.pl-rows').innerHTML=(p.last&&p.last.length)?p.last.map(r=>`<div class="fr" title="${r.status} · cost per pair incl. fees · net after settle"><span class="mu">${r.ct||D}</span><span>${r.status=='pair'?'🔒':'½'}</span><span>${r.cpp!=null?(r.cpp*100).toFixed(1)+'¢':D}</span><span class="${r.net>0?'g':r.net<0?'rd':'mu'}">${r.net==null?'open':(r.net<0?'-':'+')+'$'+Math.abs(r.net).toFixed(2)}</span></div>`).join('')
