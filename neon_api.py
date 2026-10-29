@@ -95,16 +95,26 @@ def build_neon(desk="5m"):
     # v12: 15m desk_total counts ONLY predictor_version=='v4' (v4 began 02:15 CT; lines without the field are v3). 5m unchanged.
     # Desk-wide total from every scored settlement (all predictor versions; 15m = v3+v4). On 15m,
     # paper_summary (output.pnl) is v4-only, so both are exposed. leg/post_exit_outcome/shadow are never scored.
-    _dw = []
+    _dw = []; _lg = []
     try:
         for _l in open(P("predictions.jsonl")):
             try: _r = json.loads(_l)
             except Exception: continue
-            if _r.get("mode") == "paper" and _r.get("record") == "settlement" and _r.get("decision") == "candidate" and _r.get("win") is not None and (desk != "15m" or _r.get("predictor_version") == "v4"): _dw.append(_r)
+            if _r.get("mode") == "paper" and _r.get("record") == "settlement" and _r.get("decision") == "candidate" and _r.get("win") is not None and (desk != "15m" or _r.get("predictor_version") == "v4"): (_lg if desk == "15m" and _r.get("sizing") != "bankroll_v1" else _dw).append(_r)  # v23: 15m total = bankroll_v1 only
     except Exception: pass
     _dw = net_settlements(_dw)
+    # v23 (15m bankroll_v1): desk total = bankroll dollars since sizing_start_ts; the flat-$14 v4 history is kept
+    # SEPARATELY (not converted) in desk_total.legacy_14. 5m unchanged (_lg stays empty).
+    _lgn = net_settlements(_lg) if _lg else []
+    _bk = _rj(P("bankroll.json")) if desk == "15m" else None
     desk_total = dict(wins=sum(1 for r in _dw if r.get("win")), losses=sum(1 for r in _dw if not r.get("win")),
                       pnl=round(sum(_num(r.get("paper_pnl_after_fees")) or 0 for r in _dw), 2))
+    if _bk is not None or desk == "15m":
+        _bk = _bk or {}
+        desk_total.update(sizing="bankroll_v1", bankroll=_bk.get("bankroll"), stake=_bk.get("stake"), start_bankroll=_bk.get("start_bankroll"),
+                          sizing_start_ct=_bk.get("sizing_start_ct"), streak=_bk.get("streak"), review_pause_required=_bk.get("review_pause_required"),
+                          legacy_14=dict(wins=sum(1 for r in _lgn if r.get("win")), losses=sum(1 for r in _lgn if not r.get("win")),
+                                         pnl=round(sum(_num(r.get("paper_pnl_after_fees")) or 0 for r in _lgn), 2)))
     # v10: open_positions (add-only) for the client-side countdown. Window bounds come from the slug
     # (btc-updown-<5m|15m>-<start_unix>); UI ticks 'closes in' until end_ts, then 'settling' elapsed.
     # v11: plain-English open bets. Per slug: legs (main/pair/exit on 5m; record:"leg" buy/sell on 15m),
