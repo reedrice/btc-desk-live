@@ -396,7 +396,8 @@ setInterval(plDraw,1000);
 .smc .rw{display:flex;align-items:center;gap:10px;margin-top:4px}.smc .bk{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;cursor:help}.smc canvas{flex:1;height:28px;min-width:60px}
 .smc .g{color:#3dd68c}.smc .rd{color:#ff4d6d}.smc .mu{color:#8a8fa6}.smc .ch{background:#181b28;border-radius:6px;padding:3px 7px;cursor:help;white-space:nowrap}.smc .sd{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a2d40;margin:0 1px}.smc .sd.on{background:#3dd68c}`;document.head.appendChild(css)})();
 const SM_ACC=[['main','💰 $200 · DESK','Paper $200 account copying the main desk Predictor calls (same prices, outcomes, fees), sized from its own bankroll. Separate from desk totals. No real money.'],
- ['pairlock','💰 $200 · 🔒 PAIR','Paper $200 account copying the pair-lock bot trades, scaled to its own bet size. Separate from desk totals. No real money.']];
+ ['pairlock','💰 $200 · 🔒 PAIR','Paper $200 account copying the pair-lock bot trades, scaled to its own bet size. Separate from desk totals. No real money.'],
+ ['shadow','💰 $200 · SHADOW (RLWG)','v22 · 15m only. Paper $200 account replaying the rlwg_follow SHADOW log (log-only strategy, no orders, includes rows logged while Risk was paused), scaled from its $14 notional to this bet. Shadow only: NOT in desk totals. No real money.']];
 function smEl(a){const e=document.createElement('div');e.className='smc';e.dataset.acc=a[0];e.innerHTML=`<div class="ph" title="${a[2]}">${a[1]} <span class="mu">· paper</span><span class="dot" title="heartbeat"></span></div>
 <div class="rw"><span class="bk" title="Current bankroll (started at $200)">—</span><canvas title="Bankroll after each settled bet"></canvas>
 <span class="ch sb" title="Current bet size. Starts $5; resets to 2.5% of bankroll after 3 green CT days in a row or any red day. Max $10.">—</span>
