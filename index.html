@@ -299,8 +299,26 @@ async function deriveKey(pw,salt){const m=await crypto.subtle.importKey('raw',ne
 const FB='https://btc-desk-live-default-rtdb.firebaseio.com/live.json';let SSE_OK=0;
 function liveStream(){try{const es=new EventSource(FB);es.addEventListener('put',e=>{SSE_OK=Date.now();try{const m=JSON.parse(e.data);if(m.path==='/'&&m.data)liveApply(m.data)}catch(x){}});
   es.addEventListener('keep-alive',()=>SSE_OK=Date.now());es.onerror=()=>{SSE_OK=0};}catch(e){}}
-async function liveFetch(){if(Date.now()-SSE_OK<20000&&LIVE)return;try{const b=await (await fetch(FB+'?t='+Date.now(),{cache:'no-store'})).json();await liveApply(b)}catch(e){console.warn('relay',e)}}
-async function liveApply(b){try{if(!b||b.ts<=LTS)return;
+let relayFetchInFlight=null;
+function liveFetch(){
+  if(Date.now()-SSE_OK<20000&&LIVE)return Promise.resolve();
+  if(relayFetchInFlight)return relayFetchInFlight;
+  relayFetchInFlight=(async()=>{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+    try{const response=await fetch(FB+'?t='+Date.now(),{cache:'no-store',signal:controller.signal});
+      if(!response.ok)throw new Error('relay HTTP '+response.status);
+      const b=await response.json();await liveApply(b);
+    }catch(e){console.warn('relay',e)}finally{clearTimeout(timer)}
+  })().finally(()=>{relayFetchInFlight=null});
+  return relayFetchInFlight;
+}
+let relayApplyChain=Promise.resolve();
+function liveApply(b){
+  // One decrypt/prompt flow at a time, including stream and fallback updates.
+  relayApplyChain=relayApplyChain.then(()=>applyRelayPayload(b)).catch(e=>{console.warn('relay',e);relayErr(e)});
+  return relayApplyChain;
+}
+async function applyRelayPayload(b){try{if(!b||b.ts<=LTS)return;
   let pw=localStorage.getItem('btcdesk_pw');
   for(let tries=0;;tries++){if(!pw){pw=prompt(tries?'Wrong passphrase, try again:':'BTC Desk passphrase:');if(!pw)throw new Error('no passphrase')}
     try{if(!LKEY||LSALT!==b.salt){LKEY=await deriveKey(pw,ub(b.salt));LSALT=b.salt}
@@ -322,7 +340,13 @@ setInterval(poll,1500);liveStream();setInterval(liveFetch,3000);
 // ---------- animation loop ----------
 function frame(){frames++;frm.textContent=String(frames).padStart(4,'0');frm2.textContent=frames;
   Object.values(desks).forEach(st=>{if(st.el.isConnected){drawLines(st);moveBelt(st)}});}
-setInterval(frame,33); // interval (not rAF) so it also runs in background tabs/headless
+let lastFrameAt=0;
+function animationFrameAt(t){
+  requestAnimationFrame(animationFrameAt);
+  if(document.hidden||t-lastFrameAt<33)return;
+  lastFrameAt=t;frame();
+}
+requestAnimationFrame(animationFrameAt);
 window.onresize=()=>Object.values(desks).forEach(st=>st.el.isConnected&&geom(st));
 layout();
 /* v17: Polymarket-mirror chart (client-side only: Polymarket live-data WS chainlink btc/usd + gamma slug->tokens + CLOB midpoint). No Firebase/GitHub use. */
