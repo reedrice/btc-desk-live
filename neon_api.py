@@ -1,7 +1,8 @@
 """Neon night-shift dashboard API (v4). Compact, desk-parametrised state for /neon.
 build_neon(desk) reads ONLY /home/box/shared/btc<desk>/ (desk in {"5m","15m"}); never writes.
 Missing values stay None -> the UI renders '—'. Nothing is invented or interpolated."""
-import os, json, time, calendar, math
+import os, json, time, calendar, math, datetime
+from zoneinfo import ZoneInfo
 DESKS = {"5m": "/home/box/shared/btc5m", "15m": "/home/box/shared/btc15m"}
 
 def _rj(path):
@@ -100,7 +101,7 @@ def build_neon(desk="5m"):
         for _l in open(P("predictions.jsonl")):
             try: _r = json.loads(_l)
             except Exception: continue
-            if _r.get("mode") == "paper" and _r.get("record") == "settlement" and _r.get("decision") == "candidate" and _r.get("win") is not None and (desk != "15m" or _r.get("predictor_version") == "v4"): (_lg if desk == "15m" and _r.get("sizing") != "bankroll_v1" else _dw).append(_r)  # v23: 15m total = bankroll_v1 only
+            if _r.get("mode") == "paper" and _r.get("record") == "settlement" and _r.get("decision") == "candidate" and _r.get("win") is not None and (desk != "15m" or _r.get("predictor_version") == "v4"): (_lg if desk == "15m" and (_r.get("sizing") != "bankroll_v1" or (_start(_r.get("slug")) or 0) < 1793235300) else _dw).append(_r)  # v23: 15m total = bankroll_v1 only
     except Exception: pass
     _dw = net_settlements(_dw)
     # v23 (15m bankroll_v1): desk total = bankroll dollars since sizing_start_ts; the flat-$14 v4 history is kept
@@ -115,6 +116,15 @@ def build_neon(desk="5m"):
                           sizing_start_ct=_bk.get("sizing_start_ct"), streak=_bk.get("streak"), review_pause_required=_bk.get("review_pause_required"),
                           legacy_14=dict(wins=sum(1 for r in _lgn if r.get("win")), losses=sum(1 for r in _lgn if not r.get("win")),
                                          pnl=round(sum(_num(r.get("paper_pnl_after_fees")) or 0 for r in _lgn), 2)))
+        # b15live: bankroll15m cohort extras (same rule as btc-desk-page canvas): CT day by WINDOW START; fees/calls/skips same cohort
+        _days = {}
+        for _r in _dw:
+            _k = datetime.datetime.fromtimestamp(_start(_r.get("slug")), ZoneInfo("America/Chicago")).strftime("%Y-%m-%d"); _x = _days.setdefault(_k, dict(w=0, l=0, pnl=0.0))
+            _x["w" if _r.get("win") else "l"] += 1; _x["pnl"] = round(_x["pnl"] + (_num(_r.get("paper_pnl_after_fees")) or 0), 4)
+        desk_total.update(days=_days, bankroll_days=_bk.get("days"), bankroll_wins=_bk.get("wins"), bankroll_losses=_bk.get("losses"),
+                          fees=round(sum(_num(r.get("fee")) or 0 for r in _dw), 4), calls=len(_dw),
+                          skips=len({r.get("slug") for r in dec if r.get("decision") == "skip" and (_start(r.get("slug")) or 0) >= 1793235300}),
+                          match=_bk.get("wins") == desk_total["wins"] and _bk.get("losses") == desk_total["losses"] and abs((_num(_bk.get("pnl")) or 0) - desk_total["pnl"]) < 0.01)
     # v10: open_positions (add-only) for the client-side countdown. Window bounds come from the slug
     # (btc-updown-<5m|15m>-<start_unix>); UI ticks 'closes in' until end_ts, then 'settling' elapsed.
     # v11: plain-English open bets. Per slug: legs (main/pair/exit on 5m; record:"leg" buy/sell on 15m),
