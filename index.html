@@ -67,6 +67,36 @@ body.both #desks{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px
 .pmb{display:flex;gap:8px;align-items:center;margin-top:6px}.pmb span.pm-up,.pmb span.pm-dn{flex:1;text-align:center;padding:6px 0;border-radius:8px;font-weight:700;font-size:13px}.pm-up{background:#1f9d55;color:#eafff2}.pm-dn{background:#e5484d;color:#fff1f2}.pmb .ti{float:none;margin:0}
 section.desk>.pmc{margin-top:84px}@media(min-width:1480px){section.desk .pmc{position:absolute;top:156px;left:1170px;right:12px;margin:0;z-index:3}section.desk .pmc .pm-cv{height:220px}}
 section.cmp .pmc .pm-cv{height:130px}
+/* WALLET PANELS V1 START: isolated styles; no changes to existing desk geometry. */
+.wallet-panel{background:#11131c;border:1px solid #343057;border-radius:10px;padding:12px;margin:12px 0 0;color:var(--tx);font-size:11px;line-height:1.45;min-width:0;max-width:100%}
+.wallet-panel .we-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 8px}
+.wallet-panel h3{font-family:inherit;font-size:12px;font-weight:700;line-height:1.4;letter-spacing:1px;color:#eeeaff;margin:0}
+.wallet-panel .we-status{font-size:10px;color:var(--go);border:1px solid #65512f;border-radius:12px;padding:2px 8px;background:#211d18}
+.wallet-panel .we-muted{color:#a0a0b7}
+.wallet-panel .we-plan{margin:0 0 10px;color:#a0a0b7;font-size:10px}
+.wallet-panel .we-scroll{overflow-x:auto;max-width:100%;border:1px solid #27283d;border-radius:7px}
+.wallet-panel table{width:100%;border-collapse:collapse;min-width:440px;text-align:left;table-layout:fixed;font-variant-numeric:tabular-nums}
+.wallet-panel th{font-weight:400;color:#aaa4ce;background:#181725;font-size:9px;padding:7px 6px;vertical-align:bottom}
+.wallet-panel th:first-child{width:39%}
+.wallet-panel th:not(:first-child),.wallet-panel td:not(:first-child){text-align:right}
+.wallet-panel td{padding:9px 6px;border-top:1px solid #232438;vertical-align:middle}
+.wallet-panel .we-name{display:block;color:#eceaf6;font-weight:700;font-size:10px}
+.wallet-panel .we-version{display:block;margin:2px 0 0;font-size:9px;color:#a0a0b7}
+.wallet-panel .we-value{color:#9292a9;font-size:12px}
+.wallet-panel .we-chart{min-height:104px;border:1px dashed #34334b;border-radius:7px;margin:10px 0 7px;padding:16px 10px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;background:linear-gradient(transparent 49%,#1c1d2c 50%,transparent 51%);background-size:100% 28px}
+.wallet-panel .we-chart b{font-size:11px;font-weight:500;color:#d8d3ed;background:#11131c;padding:2px 5px}
+.wallet-panel .we-chart span{max-width:360px;font-size:10px;color:#a0a0b7;background:#11131c;padding:2px 5px}
+.wallet-panel .we-legend{display:flex;gap:10px;flex-wrap:wrap;color:#aaa6bc;font-size:9px;margin-bottom:9px}
+.wallet-panel .we-legend span{display:inline-flex;align-items:center;gap:4px}
+.wallet-panel .we-key{display:inline-block;width:12px;height:3px;background:#8b7bff}
+.wallet-panel .we-key-control{background:#3fd6b8}.wallet-panel .we-key-baseline{background:#ffcf5c}
+.wallet-panel details{border-top:1px solid #27283d;padding-top:8px}
+.wallet-panel summary{cursor:pointer;color:#c6c0e2;font-size:10px;min-height:24px}
+.wallet-panel dl{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:4px 0 8px;font-size:10px}
+.wallet-panel dt{color:#a0a0b7}.wallet-panel dd{text-align:right;margin:0;overflow-wrap:anywhere}
+.wallet-panel .we-note{margin:6px 0 0;font-size:10px;color:#a0a0b7}
+@media(max-width:520px){.wallet-panel{padding:10px}.wallet-panel .we-status{font-size:9px}.wallet-panel h3{font-size:11px}.wallet-panel dl{grid-template-columns:1fr}.wallet-panel dd{text-align:left;margin-bottom:4px}}
+/* WALLET PANELS V1 END */
 </style></head><body>
 <div id="top"><span>GRAPH <b id="gname">chief-night-01</b></span><span>NODES <b id="nN">—</b></span><span>EDGES <b id="nE">—</b></span><span>WORKERS <b id="nW">—</b></span><span class="lv">\ LIVE</span>
 <span class="mid">▣ GROK BOT / CHIEF</span><span class="tg"><button data-m="5m">5m</button><button data-m="15m">15m</button><button data-m="both">both</button></span>
@@ -81,6 +111,30 @@ section.cmp .pmc .pm-cv{height:130px}
  <div class="sec">WINDOW</div><div class="r"><span>current</span><span class="x-win">—</span></div><div class="r"><span>seconds left</span><span class="x-rem">—</span></div>
  <div class="sec">LATEST DECISION</div><div class="r"><span>call</span><span class="x-dec">—</span></div><div class="r"><span>at</span><span class="x-at">—</span></div><div class="r"><span>open calls</span><span class="x-op">—</span></div><div class="x-cd"></div>
  <div class="sec">BOT HEARTBEATS</div><div class="x-hb"></div></section></template>
+<!-- WALLET PANELS V1 START: research placeholders, not connected performance. -->
+<template id="walletPanelTemplate"><section class="wallet-panel" aria-label="Wallet experiments">
+ <div class="we-heading"><h3><span class="we-horizon"></span> WALLET EXPERIMENTS</h3><span class="we-status">Research — awaiting test</span></div>
+ <p class="we-plan">Planned: $200 shared US capital across both desks · $2 initial risk per window · paper only.</p>
+ <div class="we-scroll" role="region" aria-label="Experiment comparison; scroll horizontally on narrow screens" tabindex="0"><table>
+  <caption class="we-muted" style="caption-side:bottom;text-align:left;padding:6px;font-size:9px">No experiment runs connected. Dashes mean unavailable, not zero.</caption>
+  <thead><tr><th scope="col">Strategy / status</th><th scope="col">Net P&amp;L<br>after fees</th><th scope="col">Open<br>risk</th><th scope="col">Settled<br>windows</th><th scope="col">Max<br>drawdown</th></tr></thead>
+  <tbody>
+   <tr data-wallet-strategy="reversal"><th scope="row"><span class="we-name">Wallet-inspired reversal</span><span class="we-version">Draft v1 · not started</span></th><td class="we-value">—</td><td class="we-value">—</td><td class="we-value">—</td><td class="we-value">—</td></tr>
+   <tr data-wallet-strategy="control"><th scope="row"><span class="we-name">Price-only control</span><span class="we-version">Draft v1 · not started</span></th><td class="we-value">—</td><td class="we-value">—</td><td class="we-value">—</td><td class="we-value">—</td></tr>
+   <tr data-wallet-strategy="baseline"><th scope="row"><span class="we-name">Current strategy · US replay</span><span class="we-version">Matched baseline · not connected</span></th><td class="we-value">—</td><td class="we-value">—</td><td class="we-value">—</td><td class="we-value">—</td></tr>
+  </tbody>
+ </table></div>
+ <div class="we-chart" role="img" aria-label="Comparison chart unavailable: no matched experiment results yet"><b>Comparison chart — awaiting results</b><span>Same US windows, sizing, fees, and execution assumptions required.</span></div>
+ <div class="we-legend" aria-label="Planned chart series"><span><i class="we-key"></i>Reversal</span><span><i class="we-key we-key-control"></i>Price-only</span><span><i class="we-key we-key-baseline"></i>Matched US baseline</span></div>
+ <details><summary>Decisions, execution &amp; data quality</summary><dl>
+  <dt>Latest decision / reason</dt><dd>— / no experiment feed connected</dd>
+  <dt>Experiment data freshness</dt><dd>— / not connected</dd>
+  <dt>Fees / partial fills / rejected entries</dt><dd>— / awaiting test</dd>
+  <dt>Evidence / next review</dt><dd>— / review cohort not frozen</dd>
+ </dl><p class="we-note">The reversal and price-only rules are research drafts. No strategy is launched by this panel. Comparison curves will represent alternatives, not balances to add.</p></details>
+ <p class="we-note">US experiments only. Existing desk totals above use legacy international data; they are not the matched US benchmark.</p>
+</section></template>
+<!-- WALLET PANELS V1 END -->
 <template id="tpl"><section class="desk"><div class="stage">
  <canvas class="lines"></canvas>
  <div class="left">
@@ -150,6 +204,22 @@ const BOT_COLOR={tracker:'#3fd6b8',analyst:'#8b7bff',predictor:'#ff5c8a',risk:'#
 setInterval(()=>{clock.textContent=new Date().toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour12:false})+' CT'},500);
 document.querySelectorAll('.tg button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;localStorage.neonMode=mode;layout()});
 
+// WALLET PANELS V1 START: mount once per desk; no requests, timers, storage or ledger access.
+function walletMount(){
+  const template=document.getElementById('walletPanelTemplate');
+  if(!template)return;
+  document.querySelectorAll('#desks > section.desk, #desks > section.cmp').forEach(section=>{
+    if(section.querySelector('.wallet-panel'))return;
+    const horizon=(section.querySelector('.x-dn')||{}).textContent;
+    if(horizon!=='5m'&&horizon!=='15m')return;
+    const panel=template.content.firstElementChild.cloneNode(true);
+    panel.dataset.horizon=horizon;
+    panel.setAttribute('aria-label',horizon+' wallet experiments — research awaiting test');
+    panel.querySelector('.we-horizon').textContent=horizon;
+    section.appendChild(panel);
+  });
+}
+// WALLET PANELS V1 END
 // ---------- build / layout ----------
 function build(k){const el=tpl.content.firstElementChild.cloneNode(true);set(el,'dn',k);
   // spine: timeline ruler + decorative dots (no numbers except ruler)
@@ -164,8 +234,8 @@ function build(k){const el=tpl.content.firstElementChild.cloneNode(true);set(el,
 function blob(par,c,x,y,cls){const b=document.createElement('div');b.className='blob '+cls;b.style.background=c;b.style.left=x+'px';b.style.top=y+'px';par.appendChild(b);return b}
 function layout(){document.querySelectorAll('.tg button').forEach(b=>b.classList.toggle('on',b.dataset.m==mode));
   const want=mode=='both'?['5m','15m']:[mode];document.body.classList.toggle('both',mode=='both');desks_el().innerHTML='';
-  if(mode=='both'){want.forEach(k=>{if(!cmps[k]){cmps[k]=cmpT.content.firstElementChild.cloneNode(true);set(cmps[k],'dn',k);set(cmps[k],'dn2',k)}desks_el().appendChild(cmps[k])});poll();return}
-  want.forEach(k=>{if(!desks[k])desks[k]=build(k);desks_el().appendChild(desks[k].el)});requestAnimationFrame(()=>want.forEach(k=>geom(desks[k])));poll()}
+  if(mode=='both'){want.forEach(k=>{if(!cmps[k]){cmps[k]=cmpT.content.firstElementChild.cloneNode(true);set(cmps[k],'dn',k);set(cmps[k],'dn2',k)}desks_el().appendChild(cmps[k])});walletMount();poll();return}
+  want.forEach(k=>{if(!desks[k])desks[k]=build(k);desks_el().appendChild(desks[k].el)});walletMount();requestAnimationFrame(()=>want.forEach(k=>geom(desks[k])));poll()}
 const cmps={}; // v7: simple comparison cards for 'both'
 // v11: plain-English open bets (for friends with no context). Each bet renders static lines + a .cd row that
 // tickCD() rewrites every second: countdown while open; after close "waiting for official result" with the
