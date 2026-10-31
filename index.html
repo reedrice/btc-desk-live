@@ -405,7 +405,7 @@ async function poll(){const want=mode=='both'?['5m','15m']:[mode];let W=0,N=0;
   for(const k of want){try{const t0=performance.now(),d=await liveGet(k);PM.dd[k]=d;
     if(mode=='both'){renderCmp(cmps[k],d)}else{const st=desks[k];detect(st,d);st.data=d;render(st)}W+=Object.values(d.bots||{}).filter(b=>b.age!=null&&b.age<150).length;N+=Object.keys(d.bots||{}).length;
     okl.textContent=`[ok] ${k} api ${Math.round(performance.now()-t0)}ms`}catch(err){okl.textContent='[err] '+k+' '+(err.message||'')}}
-  nN.textContent=N+want.length*5;nE.textContent=mode=='both'?D:want.reduce((s,k)=>s+desks[k].lines.length,0);nW.textContent=W}
+  nN.textContent=N+want.length*5;nE.textContent=mode=='both'?D:want.reduce((s,k)=>s+desks[k].lines.length,0);nW.textContent=W;walletLiveDraw()}
 setInterval(poll,1500);liveStream();setInterval(liveFetch,3000);
 // ---------- animation loop ----------
 function frame(){frames++;frm.textContent=String(frames).padStart(4,'0');frm2.textContent=frames;
@@ -509,4 +509,67 @@ function smDraw(){document.querySelectorAll('section.desk, section.cmp').forEach
    const t=A.today||{};q('.wl').textContent=`${t.w||0}-${t.l||0}`;q('.wl').title=`Today's wins-losses (CT) · ${A.trades||0} bets since start · today ${(t.pnl<0?'-':'+')}$${Math.abs(t.pnl||0).toFixed(2)}`;smSpark(q('canvas'),A.spark)})})}
 setInterval(smDraw,1000);
 
+// WALLET LIVE V1 START: read-only rendering from the existing encrypted payload; no new transport.
+function walletLiveDraw(){
+  const names={warming:'Warmup — no entries yet',running:'Running — paper replay',data_blocked:'Data gaps — paper replay',
+    settling:'Entries stopped — settling',completed:'Completed — paper replay',completed_pending:'Completed — outcomes pending',
+    stale:'STALE — last known results',fault:'PAUSED — experiment fault'};
+  const cash=n=>typeof n==='number'&&Number.isFinite(n)?(n<0?'−$':n>0?'+$':'$')+Math.abs(n).toFixed(2):'—';
+  const cost=n=>typeof n==='number'&&Number.isFinite(n)?'$'+Math.abs(n).toFixed(2):'—';
+  const stamp=t=>new Date(t*1000).toLocaleString('en-US',{timeZone:'America/Chicago',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  document.querySelectorAll('#desks .wallet-panel').forEach(panel=>{
+    const horizon=panel.dataset.horizon,feed=(PM.dd[horizon]||{}).wallet_experiments;
+    const badge=panel.querySelector('.we-status');
+    try{
+    if(!feed||!feed.strategies){
+      if(feed&&feed.status==='unavailable'){badge.textContent='Experiment feed unavailable';badge.title=feed.reason||'';}
+      return;
+    }
+    if(feed.schema!=='wallet-panel-feed-v1'||feed.horizon!==horizon)throw new Error('wrong experiment scope');
+    const age=Date.now()/1000-feed.updated_ts;
+    const status=age>45&&!['completed','completed_pending'].includes(feed.status)?'stale':feed.status;
+    badge.textContent=names[status]||'Experiment feed unavailable';
+    badge.style.color=status==='running'?'#5ce0a0':status==='fault'||status==='stale'?'#ff5c8a':'#ffcf5c';
+    let run=panel.querySelector('.we-run');
+    if(!run){run=document.createElement('p');run.className='we-note we-run';panel.querySelector('.we-heading').after(run)}
+    run.textContent=stamp(feed.start_ts)+' → '+stamp(feed.end_ts)+' CT · updated '+Math.max(0,Math.round(age))+'s ago';
+    panel.querySelector('.we-plan').textContent='Paper only · $2 max loss/window · each strategy has $200 shared across horizons. '+feed.assumptions;
+    for(const strategy of['reversal','control']){
+      const v=feed.strategies[strategy],row=panel.querySelector('[data-wallet-strategy="'+strategy+'"]');
+      if(!v||!row)continue;
+      const cells=row.querySelectorAll('.we-value');
+      [cash(v.realized),cost(v.open_risk),String(v.settled),cost(v.drawdown)].forEach((text,i)=>cells[i].textContent=text);
+      cells[0].style.color=v.realized>0?'#5ce0a0':v.realized<0?'#ff5c8a':'#aaa4ce';
+      row.querySelector('.we-version').textContent=`v1 · ${v.wins}W / ${v.settled-v.wins}L · ${v.pending} pending`;
+      cells[0].title='Simulated realized P&L after fees; entry fee cap '+cost(v.fees);
+      cells[1].title='Filled exposure at cost, separate from realized P&L';
+      cells[3].title='Realized drawdown; not marked intraday equity';
+    }
+    panel.querySelector('caption').textContent=`${feed.observed_windows} evaluated windows · ${feed.eligible_windows} with eligible inputs · hypothetical fills, not orders.`;
+    const ds=panel.querySelectorAll('details dd'),a=feed.strategies.reversal,b=feed.strategies.control;
+    const latest=v=>v.latest?stamp(v.latest.ts)+' '+v.latest.action+' · '+v.latest.reason:'No qualifying signal yet';
+    ds[0].textContent='Reversal: '+latest(a)+' / Control: '+latest(b);
+    ds[1].textContent='Book '+(feed.feed.book_age==null?'unavailable':Math.round(feed.feed.book_age)+'s')+' · reference '+(feed.feed.reference_age==null?'unavailable':Math.round(feed.feed.reference_age)+'s')+' (at update)';
+    ds[2].textContent='Fees '+cost(a.fees)+' / '+cost(b.fees)+' · no fills '+a.no_fills+' / '+b.no_fills;
+    ds[3].textContent=Object.entries(feed.rejected_checkpoints||{}).map(([k,v])=>k+': '+v).join(' · ')||'No rejected checkpoints recorded';
+    if((feed.settlement_status_counts||{}).GAVE_UP)ds[3].textContent+=' · '+feed.settlement_status_counts.GAVE_UP+' settlement lookups gave up (not outcomes)';
+    panel.querySelector('details .we-note').textContent='Frozen v1 comparison. Pending exposure is not zero-P&L evidence. Strategy curves are alternatives, never balances to add. '+(feed.reason||'');
+    const chart=panel.querySelector('.we-chart');
+    if(status==='warming'){chart.innerHTML='<b>Comparison chart — waiting for the start</b><span>No experiment entries before the published start.</span>';return}
+    let cv=chart.querySelector('canvas');
+    if(!cv){chart.innerHTML='<b>Cumulative realized P&amp;L · simulated after fees</b><canvas aria-label="Reversal and control realized paper P&L" style="width:100%;height:120px;display:block"></canvas>';cv=chart.querySelector('canvas')}
+    const series=[a.curve||[],b.curve||[]],all=series.flat();
+    if(!all.length)return;
+    const w=cv.width=Math.max(100,cv.clientWidth*2),h=cv.height=240,g=cv.getContext('2d');g.clearRect(0,0,w,h);
+    const lo=Math.min(0,...all.map(p=>p[1])),hi=Math.max(0,...all.map(p=>p[1])),range=hi-lo||1;
+    const right=Math.max(feed.start_ts+1,feed.asof_ts);
+    const X=t=>8+(t-feed.start_ts)/(right-feed.start_ts)*(w-16),Y=v=>12+(hi-v)/range*(h-24);
+    g.strokeStyle='#34334b';g.beginPath();g.moveTo(0,Y(0));g.lineTo(w,Y(0));g.stroke();
+    series.forEach((points,j)=>{g.strokeStyle=j?'#3fd6b8':'#8b7bff';g.lineWidth=3;g.beginPath();points.forEach((p,i)=>{if(!i)g.moveTo(X(p[0]),Y(p[1]));else{g.lineTo(X(p[0]),Y(points[i-1][1]));g.lineTo(X(p[0]),Y(p[1]))}});if(points.length)g.lineTo(X(right),Y(points[points.length-1][1]));g.stroke()});
+    chart.setAttribute('aria-label','Cumulative realized hypothetical P&L, reversal '+cash(a.realized)+', control '+cash(b.realized));
+    panel.querySelector('.we-legend span:last-child').textContent='Matched US baseline — not connected';
+    }catch(e){badge.textContent='Experiment feed unavailable';badge.title='Invalid experiment payload; existing desk data unaffected';}
+  });
+}
+// WALLET LIVE V1 END
 </script><div id="relayAge" style="position:fixed;left:8px;bottom:4px;font:11px monospace;color:#7a7aa0;z-index:99"></div></body></html>
