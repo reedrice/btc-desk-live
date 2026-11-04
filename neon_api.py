@@ -298,7 +298,7 @@ def _desk_bankroll(d, now):
         else: break
     br = _num(bk.get("bankroll")); lb = _num(l2.get("bankroll_usd"))
     tday = next((r for r in by_day if r["day"] == today), None)
-    step = max(1, len(pts or []) // 400)
+    step = max(1, len(pts or []) // 120)
     spark = [[p[0], p[1]] for p in (pts or [])[::step]] + ([[pts[-1][0], pts[-1][1]]] if pts and (len(pts) - 1) % step else [])
     return dict(bankroll=br, start=START, pnl=round(br - START, 2) if br is not None else None, bet=_num(bk.get("bet_usd")),
                 peak=_num(bk.get("peak")), updated_at=bk.get("updated_at"), today=today,
