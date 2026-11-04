@@ -30,19 +30,19 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
   then "settling… m:ss" elapsed (15m appends "(~30m)" expected lag). 'both' view shows compact rows under "open calls".
 - This index.html also picked up the v9 15m desk-wide/v4 total display from the local dashboard.
 
-## v11 (2026-10-28 ~3:30 AM CT) — plain-English open bets + README
+## v11 (2026-10-28 ~3:30 AM CT) — plain-English open trades + README
 - neon_api.py `_positions()` (add-only `open_positions` fields): cost, pays_up/pays_down, pair, exited, ptb (start price),
   now_twap/now_px (live window only), final_twap (= next window's price_to_beat), settle_lag_s (median official settle ts −
   window end from predictions.jsonl; 5m ≈ 330 s from 85 samples; 15m falls back to 1800 s until ≥5 samples), result (settled <150 s ago).
-- index.html `cdRows/tickCD`: each bet reads "Bet: BTC goes UP (or ties) in the 3:15–3:20 AM CT window", payout line, target line,
+- index.html `cdRows/tickCD`: each trade reads "Trade: BTC goes UP (or ties) in the 3:15–3:20 AM CT window", payout line, target line,
   live WINNING/LOSING (or "Profit locked in" for pair locks), countdown → "waiting for official result (usually ~N min, by ~h:mm CT)"
   + provisional "Looks like a WIN/LOSS" → WON/LOST for 2 min. Compact form in "both". ⓘ legend line with tooltip.
 - README.md added: what it is, how the desk works, fork-only (no PRs/contributions), secrets not included.
 - Backups: index.html.bak11 (and index_neon.html.bak11 / neon_api.py.bak11 in btc5m-dashboard).
 - 3:40 AM CT (v12): 15m total = v4 trades only (5m unchanged); pair-lock settlements read 'Locked pair (bought UP and DOWN) → +$X'.
-- 3:50 AM CT (v13): your_call open bets are now visual tiles (▲/▼/🔒, start time, tug bar + $gap, countdown ring → ⏳~ETA, payout chip, WIN?/LOSS?, WON/LOST flash 2 min). Explanations only in the ⓘ tooltip. Backups *.bak13.
+- 3:50 AM CT (v13): your_call open trades are now visual tiles (▲/▼/🔒, start time, tug bar + $gap, countdown ring → ⏳~ETA, payout chip, WIN?/LOSS?, WON/LOST flash 2 min). Explanations only in the ⓘ tooltip. Backups *.bak13.
 - 3:55 AM CT (v14): settling ring = static thin gray track + solid yellow arc filling by elapsed/settle_lag, '~Xm' centered, no spin/hourglass. Backups *.bak14.
-- 4:10 AM CT (v15): open-bet tile grid uses minmax(0,1fr) middle col + shrinking/ellipsis payout chip + compact range '$15→$20–$41' so the ring never clips on mobile. Backups *.bak15.
+- 4:10 AM CT (v15): open-trade tile grid uses minmax(0,1fr) middle col + shrinking/ellipsis payout chip + compact range '$15→$20–$41' so the ring never clips on mobile. Backups *.bak15.
 - 4:17 AM CT (v16): conveyor belt moved left:196→208px and P&L tags centered on it (translateX(-50%)), carrier home 205→217px; belt+tags now share center x≈217. Backups *.bak16.
 
 ## v17 / v17b (2026-10-28 04:26 CDT)
@@ -62,4 +62,4 @@ Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 9
 - Backups: *.bak19. No trading logic changed.
 
 ## v20 (Oct 28 2026) — $200 SIM cards
-Two paper $200 bankroll cards (desk copy + pair-lock copy) on both desks: bankroll, sparkline, bet, 3 streak dots, today W-L; tooltips explain. Data `/api/neon` → `sim200` from /home/box/shared/btc5m/sim200/state.json. Kept separate: never summed into desk P&L/record. Backups *.bak20.
+Two paper $200 bankroll cards (desk copy + pair-lock copy) on both desks: bankroll, sparkline, trade size, 3 streak dots, today W-L; tooltips explain. Data `/api/neon` → `sim200` from /home/box/shared/btc5m/sim200/state.json. Kept separate: never summed into desk P&L/record. Backups *.bak20.

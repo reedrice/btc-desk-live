@@ -1,6 +1,6 @@
 # BTC Desk Live
 
-A personal, paper-money dashboard for a small team of AI bots that make practice bets on
+A personal, paper-money dashboard for a small team of AI bots that make practice trades on
 Polymarket's **"Bitcoin Up or Down"** markets. This is Reed's own project. It is shared with a few
 friends to look at, not offered to the public.
 
@@ -12,9 +12,9 @@ question: **will Bitcoin's price be higher at the end of this window than at the
 - The price comes from Chainlink, averaged over the last 60 seconds (TWAP60).
 - If the end price is **equal to or higher than** the start price, **UP** wins. Ties count as UP.
 - A winning share pays **$1**. You buy shares at whatever price the market charges, e.g. 84¢.
-  A $14 bet at 84¢ buys about 16.7 shares, which pay $16.67 if right and $0 if wrong.
+  A $14 trade at 84¢ buys about 16.7 shares, which pay $16.67 if right and $0 if wrong.
 
-Each open bet on the dashboard says in plain words what was bet, what it pays, the start price to
+Each open trade on the dashboard says in plain words what was traded, what it pays, the start price to
 beat, whether it's winning right now, and when the window closes. After a window closes the
 official result takes a few minutes to post (about 5–6 minutes on 5m, about 30 minutes on 15m).
 The card shows when to expect it, then shows **WON** or **LOST** for two minutes.
@@ -27,11 +27,11 @@ Each desk (5m and 15m) is a chain of bots, and their totals are always kept sepa
 
 1. **Tracker** watches the market and Bitcoin price feeds and records the start price.
 2. **Analyst** estimates how likely the current leader is to hold, and what the order book costs.
-3. **Predictor** decides whether to bet (flat $14) or skip, following written entry rules
+3. **Predictor** decides whether to trade (flat $14) or skip, following written entry rules
    (price limits, minimum edge, a "pair lock" that buys both sides when together they cost under $1,
    and an early cash-out at 95¢).
 4. **Risk** has a veto. It pauses the desk after 2 red days in a row, 5 losses in a row, or
-   accuracy under 50% after 20+ calls, and checks every bet against the rules.
+   accuracy under 50% after 20+ calls, and checks every trade against the rules.
 
 An Orchestrator bot coordinates each desk. Rule changes need Risk's sign-off.
 

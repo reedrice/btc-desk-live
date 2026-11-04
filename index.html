@@ -191,7 +191,7 @@ section.cmp .pmc .pm-cv{height:130px}
  <div class="pn"><div class="t">RUN LOG</div><div class="b log"></div></div>
  <div class="pn"><div class="t">DISPATCH</div><div class="b x-disp"></div><canvas class="x-histo" style="width:100%;height:30px;display:block"></canvas></div>
  <div class="pn"><div class="t">OUTPUT / HUMAN GATE</div><div class="b"><div class="big x-pnl">—</div>
-  <div class="go x-o1" style="color:var(--go)">—</div><div class="dim x-o2">—</div><div class="x-o3">paper only · send disabled</div><div class="dim x-pbl" style="margin-top:4px;font-size:.85em">—</div><div class="pbar x-pb" title="Win rate: share of settled bets that made money"></div></div></div>
+  <div class="go x-o1" style="color:var(--go)">—</div><div class="dim x-o2">—</div><div class="x-o3">paper only · send disabled</div><div class="dim x-pbl" style="margin-top:4px;font-size:.85em">—</div><div class="pbar x-pb" title="Win rate: share of settled trades that made money"></div></div></div>
 </div></section></template>
 <script>
 // ---------- helpers ----------
@@ -237,13 +237,13 @@ function layout(){document.querySelectorAll('.tg button').forEach(b=>b.classList
   if(mode=='both'){want.forEach(k=>{if(!cmps[k]){cmps[k]=cmpT.content.firstElementChild.cloneNode(true);set(cmps[k],'dn',k);set(cmps[k],'dn2',k)}desks_el().appendChild(cmps[k])});walletMount();poll();return}
   want.forEach(k=>{if(!desks[k])desks[k]=build(k);desks_el().appendChild(desks[k].el)});walletMount();requestAnimationFrame(()=>want.forEach(k=>geom(desks[k])));poll()}
 const cmps={}; // v7: simple comparison cards for 'both'
-// v11: plain-English open bets (for friends with no context). Each bet renders static lines + a .cd row that
+// v11: plain-English open trades (for friends with no context). Each trade renders static lines + a .cd row that
 // tickCD() rewrites every second: countdown while open; after close "waiting for official result" with the
 // measured typical lag (settle_lag_s = median official settle delay), expected-by clock time CT and elapsed,
 // plus a provisional call from the final TWAP60; once settled, "WON/LOST" shows for 2 min, then the row hides.
 const ctT=t=>new Date(t*1000).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'});
 const usd=(v,dp=2)=>v==null?'—':'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});
-const LEGEND=`<span class="ti" title="Each tile = one paper bet on whether Bitcoin ends its 5-/15-min window above (▲ UP, ties count) or below (▼ DOWN) the start price.&#10;Bar: center = start price, dot = current price; green = we're winning, red = losing; number = gap in $.&#10;Ring = time left. ⏳ = window closed, waiting for the official result (~ETA). WIN?/LOSS? = provisional.&#10;Chip = stake → payout if right. 🔒 = locked pair (bought UP and DOWN): profit fixed either way.&#10;Paper money only.">ⓘ</span>`;
+const LEGEND=`<span class="ti" title="Each tile = one paper trade on whether Bitcoin ends its 5-/15-min window above (▲ UP, ties count) or below (▼ DOWN) the start price.&#10;Bar: center = start price, dot = current price; green = we're winning, red = losing; number = gap in $.&#10;Ring = time left. ⏳ = window closed, waiting for the official result (~ETA). WIN?/LOSS? = provisional.&#10;Chip = stake → payout if right. 🔒 = locked pair (bought UP and DOWN): profit fixed either way.&#10;Paper money only.">ⓘ</span>`;
 function cdRows(d,max,compact){const op=(d.open_positions||[]).slice(0,max);if(!op.length)return '';return '<div class="betw'+(compact?' cmp':'')+'">'+op.map(x=>{
   const lk=x.pair&&x.pays_up===x.pays_down,up=(x.side||'').toLowerCase()==='up';
   const ic=lk?'<b class="ar lk">🔒</b>':up?'<b class="ar ok">▲</b>':'<b class="ar bad">▼</b>';
@@ -359,7 +359,7 @@ function render(st){const e=st.el,d=st.data,t=d.tracker||{},a=d.analyst||{},p=d.
   dif.forEach((x,i)=>{const bw=hw/Math.max(dif.length,1);hg.fillStyle=x>=0?'#8b7bff':'#ff5c8a';const bh=Math.abs(x)/mx*(hh-6);hg.fillRect(i*bw+2,hh-bh,bw-4,bh)});
   const pn=$(e,'pnl'),_P=d.desk_total?d.desk_total.pnl:o.pnl;pn.textContent=_P==null?D:(_P<0?'-':'')+'$'+Math.abs(_P).toFixed(2);
   {const t=d.desk_total||o;set(e,'o1',t.wins!=null?`${t.wins} won × ${t.losses} lost · paper`:D)}{const B=d.desk_total,b=B&&B.sizing==='bankroll_v1';set(e,'o2',`calls ${b?B.calls:o.candidates??D}   skips ${b?B.skips:o.skips??D}   fees $${f(b?B.fees:o.fees)}`)}
-  const _t=d.desk_total||o,n=(_t.wins||0)+(_t.losses||0),fl=n?Math.round(_t.wins/n*30):0;$(e,'pbl').textContent=n?`Win rate ${Math.round(_t.wins/n*100)}% (${_t.wins} of ${n})`:'Win rate — (no settled bets yet)';$(e,'pb').innerHTML=Array.from({length:30},(_,i)=>`<span class="${i<fl?'f':''}"></span>`).join('')}
+  const _t=d.desk_total||o,n=(_t.wins||0)+(_t.losses||0),fl=n?Math.round(_t.wins/n*30):0;$(e,'pbl').textContent=n?`Win rate ${Math.round(_t.wins/n*100)}% (${_t.wins} of ${n})`:'Win rate — (no settled trades yet)';$(e,'pb').innerHTML=Array.from({length:30},(_,i)=>`<span class="${i<fl?'f':''}"></span>`).join('')}
 
 // ---------- encrypted gist relay (GitHub Pages build) ----------
 const GIST_FALLBACK='https://gist.githubusercontent.com/reedrice/4a5f16a520bf0ca912e0064d9ba8fe40/raw/live.json';
@@ -491,12 +491,12 @@ setInterval(plDraw,1000);
 .smc .rw{display:flex;align-items:center;gap:10px;margin-top:4px}.smc .bk{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;cursor:help}.smc canvas{flex:1;height:28px;min-width:60px}
 .smc .g{color:#3dd68c}.smc .rd{color:#ff4d6d}.smc .mu{color:#8a8fa6}.smc .ch{background:#181b28;border-radius:6px;padding:3px 7px;cursor:help;white-space:nowrap}.smc .sd{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a2d40;margin:0 1px}.smc .sd.on{background:#3dd68c}`;document.head.appendChild(css)})();
 const SM_ACC=[['main','💰 $200 · DESK','Paper $200 account copying the main desk Predictor calls (same prices, outcomes, fees), sized from its own bankroll. Separate from desk totals. No real money.'],
- ['pairlock','💰 $200 · 🔒 PAIR','Paper $200 account copying the pair-lock bot trades, scaled to its own bet size. Separate from desk totals. No real money.'],
- ['shadow','💰 $200 · SHADOW (RLWG)','v22 · 15m only. Paper $200 account replaying the rlwg_follow SHADOW log (log-only strategy, no orders, includes rows logged while Risk was paused), scaled from its $14 notional to this bet. Shadow only: NOT in desk totals. No real money.']];
+ ['pairlock','💰 $200 · 🔒 PAIR','Paper $200 account copying the pair-lock bot trades, scaled to its own trade size. Separate from desk totals. No real money.'],
+ ['shadow','💰 $200 · SHADOW (RLWG)','v22 · 15m only. Paper $200 account replaying the rlwg_follow SHADOW log (log-only strategy, no orders, includes rows logged while Risk was paused), scaled from its $14 notional to this trade. Shadow only: NOT in desk totals. No real money.']];
 function smEl(a){const e=document.createElement('div');e.className='smc';e.dataset.acc=a[0];e.innerHTML=`<div class="ph" title="${a[2]}">${a[1]} <span class="mu">· paper</span><span class="dot" title="heartbeat"></span></div>
-<div class="rw"><span class="bk" title="Current bankroll (started at $200)">—</span><canvas title="Bankroll after each settled bet"></canvas>
-<span class="ch sb" title="Current bet size. Starts $5; resets to 2.5% of bankroll after 3 green CT days in a row or any red day. Max $10.">—</span>
-<span class="ch sk" title="Green-day streak (CT days). 3 in a row → bet resizes to 2.5% of bankroll"></span>
+<div class="rw"><span class="bk" title="Current bankroll (started at $200)">—</span><canvas title="Bankroll after each settled trade"></canvas>
+<span class="ch sb" title="Current trade size. Starts $5; resets to 2.5% of bankroll after 3 green CT days in a row or any red day. Max $10.">—</span>
+<span class="ch sk" title="Green-day streak (CT days). 3 in a row → trade resizes to 2.5% of bankroll"></span>
 <span class="ch wl" title="Today's wins-losses (CT)">—</span></div>`;return e}
 function smSpark(cv,s){const r=cv.getBoundingClientRect(),w=cv.width=Math.max(60,r.width*2),h=cv.height=56,c=cv.getContext('2d');if(!s||s.length<2){c.strokeStyle='#2a2d40';c.beginPath();c.moveTo(0,h/2);c.lineTo(w,h/2);c.stroke();return}
  const lo=Math.min(...s),hi=Math.max(...s),sp=(hi-lo)||1;c.strokeStyle=s[s.length-1]>=s[0]?'#3dd68c':'#ff4d6d';c.lineWidth=3;c.beginPath();s.forEach((v,i)=>{const x=i/(s.length-1)*w,y=h-4-(v-lo)/sp*(h-8);i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke()}
@@ -506,7 +506,7 @@ function smDraw(){document.querySelectorAll('section.desk, section.cmp').forEach
    dt.style.background=ag==null?'#555':ag<45?'#3dd68c':ag<120?'#ffcf5c':'#ff4d6d';dt.title=ag==null?'no heartbeat':`heartbeat ${Math.round(ag)}s ago`;
    const b=A.bankroll,bk=q('.bk');bk.textContent=b==null?D:'$'+b.toFixed(2);bk.className='bk '+(b==null?'mu':b>S.start?'g':b<S.start?'rd':'');
    q('.sb').textContent=A.bet==null?D:'$'+A.bet.toFixed(2);const n=S.need||3,st=A.streak||0;q('.sk').innerHTML=Array.from({length:n},(_,i)=>`<i class="sd${i<st?' on':''}"></i>`).join('');
-   const t=A.today||{};q('.wl').textContent=`${t.w||0}-${t.l||0}`;q('.wl').title=`Today's wins-losses (CT) · ${A.trades||0} bets since start · today ${(t.pnl<0?'-':'+')}$${Math.abs(t.pnl||0).toFixed(2)}`;smSpark(q('canvas'),A.spark)})})}
+   const t=A.today||{};q('.wl').textContent=`${t.w||0}-${t.l||0}`;q('.wl').title=`Today's wins-losses (CT) · ${A.trades||0} trades since start · today ${(t.pnl<0?'-':'+')}$${Math.abs(t.pnl||0).toFixed(2)}`;smSpark(q('canvas'),A.spark)})})}
 setInterval(smDraw,1000);
 /* v24: DESK BANKROLL (paper, $200 start) — 5m only. Data: /api/neon → desk_bankroll (read-only: bankroll.json,
    cross-checked vs Risk ledger_200). The desk's REAL paper bankroll Risk reports. NOT the sim200 card. Reuses .smc + smSpark. */
@@ -514,7 +514,7 @@ function dbkDraw(){const sec=[...document.querySelectorAll('section.desk, sectio
  const B=(PM.dd['5m']||{}).desk_bankroll;let e=sec.querySelector('.smc[data-acc="deskbk"]');
  if(!e){e=document.createElement('div');e.className='smc';e.dataset.acc='deskbk';e.innerHTML=`<div class="ph" title="The 5m desk's REAL paper bankroll — the number BTC 5m Risk reports (bankroll.json, cross-checked vs Risk ledger_200). Started at $200. Not the 💰 $200 · DESK sim card. Paper money only.">📈 DESK BANKROLL <span class="mu">· real desk · paper</span><span class="mu mt" style="margin-left:auto"></span></div>
 <div class="rw"><span class="bk" title="Desk paper bankroll (started at $200)">—</span><canvas title="Bankroll after each settled window since the $200 start"></canvas>
-<span class="ch sb" title="Current desk bet size (2.5% of bankroll)">—</span><span class="ch sk" title="Green CT days in a row (completed days)"></span><span class="ch wl">—</span></div>
+<span class="ch sb" title="Current desk trade size (2.5% of bankroll)">—</span><span class="ch sk" title="Green CT days in a row (completed days)"></span><span class="ch wl">—</span></div>
 <div class="rw mu dl" style="font-size:11px;flex-wrap:wrap;gap:6px"></div>`;
   const f=sec.querySelector('.smc');const anc=sec.querySelector('.plc')||sec.querySelector('.x-hb')||sec.querySelector('.pmc')||sec.querySelector('.stage');f?f.before(e):anc?anc.after(e):sec.appendChild(e)}
  if(!B)return;const q=c=>e.querySelector(c),m=v=>(v<0?'−$':'+$')+Math.abs(v).toFixed(2);
