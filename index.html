@@ -508,31 +508,23 @@ function smDraw(){document.querySelectorAll('section.desk, section.cmp').forEach
    q('.sb').textContent=A.bet==null?D:'$'+A.bet.toFixed(2);const n=S.need||3,st=A.streak||0;q('.sk').innerHTML=Array.from({length:n},(_,i)=>`<i class="sd${i<st?' on':''}"></i>`).join('');
    const t=A.today||{};q('.wl').textContent=`${t.w||0}-${t.l||0}`;q('.wl').title=`Today's wins-losses (CT) · ${A.trades||0} bets since start · today ${(t.pnl<0?'-':'+')}$${Math.abs(t.pnl||0).toFixed(2)}`;smSpark(q('canvas'),A.spark)})})}
 setInterval(smDraw,1000);
-/* v24: DESK BANKROLL (paper, $200 start) — 5m only. Data: /api/neon → desk_bankroll (read-only: bankroll.json +
-   Risk's ledger_200 history). This is the desk's REAL paper bankroll that Risk reports. NOT the sim200 card. */
-(function(){const css=document.createElement('style');css.textContent=`.dbk{background:#11131c;border:1px solid #2c5a45;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:12px;max-width:520px}
-.dbk .ph{display:flex;align-items:center;gap:8px;color:#fff;font-weight:700;letter-spacing:1px;cursor:help}.dbk .rw{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:4px}
-.dbk .bk{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}.dbk .td{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}.dbk canvas{width:100%;height:26px;display:block;margin-top:4px}
-.dbk .g{color:#3dd68c}.dbk .rd{color:#ff4d6d}.dbk .mu{color:#8a8fa6}.dbk .ch{background:#181b28;border-radius:6px;padding:3px 7px;cursor:help;white-space:nowrap}
-.dbk .days{display:flex;gap:2px;align-items:flex-end;height:24px;margin-top:3px}.dbk .days div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;font-size:9px;color:#8a8fa6;cursor:help;height:100%}.dbk .days i{display:block;width:100%;border-radius:2px;min-height:2px}`;document.head.appendChild(css)})();
+/* v24: DESK BANKROLL (paper, $200 start) — 5m only. Data: /api/neon → desk_bankroll (read-only: bankroll.json,
+   cross-checked vs Risk ledger_200). The desk's REAL paper bankroll Risk reports. NOT the sim200 card. Reuses .smc + smSpark. */
 function dbkDraw(){const sec=[...document.querySelectorAll('section.desk, section.cmp')].find(s=>((s.querySelector('.x-dn')||{}).textContent||'')==='5m');if(!sec)return;
- const B=(PM.dd['5m']||{}).desk_bankroll;let e=sec.querySelector('.dbk');
- if(!e){e=document.createElement('div');e.className='dbk';e.innerHTML=`<div class="ph" title="The 5m desk's real paper bankroll — the same number BTC 5m Risk reports (bankroll.json, cross-checked against Risk's ledger_200). Started at $200 on Oct 28 CT. Separate from the 💰 $200 · DESK sim card. Paper money only.">📈 DESK BANKROLL <span class="mu">· paper, $200 start</span><span class="mu mt" style="margin-left:auto"></span></div>
-<div class="rw"><span class="bk" title="Current desk paper bankroll">—</span><span class="td" title="Today's P&L (CT), realized after fees">—</span><span class="mu tl">today</span></div>
-<div class="rw"><span class="ch tot" title="Total gain since the $200 start">—</span><span class="ch bt" title="Current bet size (2.5% of bankroll, resized by Risk rules)">—</span><span class="ch pk" title="Peak bankroll">—</span><span class="ch wl" title="Windows won/settled since $200 start (Risk ledger_200)">—</span><span class="ch sk" title="Green CT days in a row (completed days)">—</span></div>
-<canvas title="Bankroll after each settled window since the $200 start"></canvas><div class="days"></div>`;
+ const B=(PM.dd['5m']||{}).desk_bankroll;let e=sec.querySelector('.smc[data-acc="deskbk"]');
+ if(!e){e=document.createElement('div');e.className='smc';e.dataset.acc='deskbk';e.innerHTML=`<div class="ph" title="The 5m desk's REAL paper bankroll — the number BTC 5m Risk reports (bankroll.json, cross-checked vs Risk ledger_200). Started at $200. Not the 💰 $200 · DESK sim card. Paper money only.">📈 DESK BANKROLL <span class="mu">· real desk · paper</span><span class="mu mt" style="margin-left:auto"></span></div>
+<div class="rw"><span class="bk" title="Desk paper bankroll (started at $200)">—</span><canvas title="Bankroll after each settled window since the $200 start"></canvas>
+<span class="ch sb" title="Current desk bet size (2.5% of bankroll)">—</span><span class="ch sk" title="Green CT days in a row (completed days)"></span><span class="ch wl">—</span></div>
+<div class="rw mu dl" style="font-size:11px;flex-wrap:wrap;gap:6px"></div>`;
   const f=sec.querySelector('.smc');const anc=sec.querySelector('.plc')||sec.querySelector('.x-hb')||sec.querySelector('.pmc')||sec.querySelector('.stage');f?f.before(e):anc?anc.after(e):sec.appendChild(e)}
  if(!B)return;const q=c=>e.querySelector(c),m=v=>(v<0?'−$':'+$')+Math.abs(v).toFixed(2);
- const b=B.bankroll,bk=q('.bk');bk.textContent=b==null?'—':'$'+b.toFixed(2);bk.className='bk '+(b==null?'mu':b>=B.start?'g':'rd');
- const t=B.today_pnl||0,td=q('.td');td.textContent=m(t);td.className='td '+(t>0?'g':t<0?'rd':'mu');q('.tl').textContent=`today (CT) · ${B.today_won}/${B.today_n} won`;
- q('.tot').textContent=B.pnl==null?'—':m(B.pnl)+' total';q('.bt').textContent=B.bet==null?'—':'bet $'+B.bet.toFixed(2);q('.pk').textContent=B.peak==null?'—':'peak $'+B.peak.toFixed(2);
- q('.wl').textContent=B.windows!=null?`${B.won}/${B.windows} won`:'—';q('.sk').textContent=`🟢×${B.green_streak||0} days`;
- q('.mt').textContent=B.match===true?'✓ matches Risk':B.match===false?'⚠ Risk ledger $'+(B.risk_ledger_bankroll||0).toFixed(2):'';
- const cv=q('canvas'),r=cv.getBoundingClientRect(),w=cv.width=Math.max(120,r.width*2),h=cv.height=52,c=cv.getContext('2d'),s=[B.start,...(B.spark||[]).map(p=>p[1])];
- if(s.length>1){const lo=Math.min(...s),hi=Math.max(...s),sp=(hi-lo)||1,Y=v=>h-6-(v-lo)/sp*(h-12);c.strokeStyle='#2a2d40';c.setLineDash([4,4]);c.beginPath();c.moveTo(0,Y(B.start));c.lineTo(w,Y(B.start));c.stroke();c.setLineDash([]);
-  c.strokeStyle=s[s.length-1]>=B.start?'#3dd68c':'#ff4d6d';c.lineWidth=2;c.beginPath();s.forEach((v,i)=>{const x=i/(s.length-1)*w;i?c.lineTo(x,Y(v)):c.moveTo(x,Y(v))});c.stroke()}
- const D=B.by_day||[],mx=Math.max(1,...D.map(d=>Math.abs(d.pnl)));const key=JSON.stringify(D);if(e.dataset.k!==key){e.dataset.k=key;
-  q('.days').innerHTML=D.map(d=>`<div title="${d.day} CT: ${m(d.pnl)} · ${d.won}/${d.n} won · ended $${d.end.toFixed(2)}"><i style="height:${Math.round(Math.abs(d.pnl)/mx*12)+2}px;background:${d.pnl>=0?'#3dd68c':'#ff4d6d'}"></i>${d.day.slice(5)}</div>`).join('')}}
+ const b=B.bankroll,bk=q('.bk');bk.textContent=b==null?'—':'$'+b.toFixed(2);bk.className='bk '+(b==null?'mu':b>B.start?'g':b<B.start?'rd':'');
+ q('.sb').textContent=B.bet==null?'—':'$'+B.bet.toFixed(2);q('.sk').textContent='🟢×'+(B.green_streak||0);
+ const t=B.today_pnl||0,wl=q('.wl');wl.innerHTML=`${B.today_won||0}-${(B.today_n||0)-(B.today_won||0)} <span class="${t>0?'g':t<0?'rd':'mu'}">${m(t)}</span>`;
+ wl.title=`Today (CT): ${B.today_won||0}/${B.today_n||0} won, ${m(t)} · since $200: ${B.won}/${B.windows} won, ${B.pnl==null?'—':m(B.pnl)} · peak $${(B.peak||0).toFixed(2)}`;
+ q('.mt').textContent=B.match===true?'✓ matches Risk':B.match===false?'⚠ Risk $'+(B.risk_ledger_bankroll||0).toFixed(2):'';
+ smSpark(q('canvas'),[B.start,...(B.spark||[]).map(p=>p[1])]);
+ const D=(B.by_day||[]).slice(-7),k=JSON.stringify(D);if(e.dataset.k!==k){e.dataset.k=k;q('.dl').innerHTML=D.map(d=>`<span title="${d.day} CT · ${d.won}/${d.n} won · ended $${d.end.toFixed(2)}">${d.day.slice(5)} <span class="${d.pnl>=0?'g':'rd'}">${m(d.pnl)}</span></span>`).join(' · ')}}
 setInterval(dbkDraw,1000);
 
 // WALLET LIVE V1 START: read-only rendering from the existing encrypted payload; no new transport.
