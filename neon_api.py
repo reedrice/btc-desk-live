@@ -140,7 +140,7 @@ def build_neon(desk="5m"):
         output=dict(pnl=_num(summ.get("total_pnl_after_fees")), wins=summ.get("wins"), losses=summ.get("losses"),
                     fees=_num(summ.get("total_fees")), windows=summ.get("windows"), candidates=summ.get("candidates"),
                     skips=summ.get("skips"), equity=eq),
-        log=log[::-1][:30], pairlock=_pairlock(d, now) if desk == "5m" else None, sim200=_sim200("/home/box/shared/btc5m" if desk == "5m" else "/home/box/shared/btc15m", now))  # v21: 15m reads its own sim200 (main account only)
+        log=log[::-1][:30], pairlock=_pairlock(d, now) if desk == "5m" else None, sim200=_sim200("/home/box/shared/btc5m" if desk == "5m" else "/home/box/shared/btc15m", now), **({"desk_bankroll": _desk_bankroll(d, now)} if desk == "5m" else {}))  # v21: 15m reads its own sim200 (main account only)
 
 # v20: sim200 — two $200 paper bankroll sims. Read-only from sim200/state.json. Kept in its OWN block:
 # never added to desk_total / output / any desk record (Reed's rule).
@@ -244,3 +244,66 @@ def _positions(d, desk, W, now, cur, recs, sett, summ, open_c):
 def _is_pair(r):
     """True when a settlement line is a pair lock (15m: exit_type pair_lock / strategy pair_locked; 5m: leg 'pair')."""
     return r.get("exit_type") == "pair_lock" or r.get("strategy") == "pair_locked" or r.get("leg") == "pair" or "pair" in (r.get("legs") or [])
+
+# v24: desk_bankroll — the 5m desk's REAL paper bankroll (Predictor's bankroll.json, the same one Risk
+# cross-checks as ledger_200). Read-only. History = $200 + cumulative realized net P&L per settled window
+# from Risk's own ledger5m.build() (post-cutover windows, i.e. exactly Risk's ledger_200). Separate from sim200.
+_DBK_CACHE = {}
+def _desk_bankroll(d, now):
+    import sys, zoneinfo
+    CT = zoneinfo.ZoneInfo("America/Chicago"); CUT = 1793235900; START = 200.0
+    bk = _rj(os.path.join(d, "bankroll.json")) or {}; rs = _rj(os.path.join(d, "risk_state.json")) or {}
+    m = rs.get("metrics") or {}; l2 = m.get("ledger_200") or {}
+    pp, rp = os.path.join(d, "predictions.jsonl"), os.path.join(d, "rounds.jsonl")
+    try: key = tuple((os.stat(p).st_mtime, os.stat(p).st_size) for p in (pp, rp))
+    except OSError: key = None
+    if key is None or _DBK_CACHE.get("key") != key:
+        pts = []
+        try:
+            if "/workspace/btc5m/risk" not in sys.path: sys.path.insert(0, "/workspace/btc5m/risk")
+            import ledger5m
+            outc = {}
+            for ln in open(rp):
+                try: r = json.loads(ln)
+                except Exception: continue
+                o = r.get("polymarket_resolution") or r.get("outcome")
+                if o in ("Up", "Down"): outc[r["slug"]] = o
+            rows = []
+            for ln in open(pp):
+                try: p = json.loads(ln)
+                except Exception: continue
+                if p.get("mode") == "paper": rows.append(p)
+            ws = sorted((w for w in ledger5m.build(rows, outc) if w.get("status") == "settled" and w["start"] >= CUT), key=lambda w: w["start"])
+            b = START
+            for w in ws:
+                b += w["net_pnl"]; pts.append([w["start"], round(b, 4), 1 if w["financial_win"] else 0])
+        except Exception: pts = None
+        _DBK_CACHE.update(key=key, pts=pts)
+    pts = _DBK_CACHE.get("pts")
+    today = datetime.datetime.fromtimestamp(now, CT).date().isoformat()
+    days = {}
+    for t, _, _w in (pts or []):
+        dd = datetime.datetime.fromtimestamp(t, CT).date().isoformat(); days.setdefault(dd, [0, 0]); days[dd][0] += 1; days[dd][1] += _w
+    prev = START; by_day = []
+    for i, p in enumerate(pts or []):
+        dd = datetime.datetime.fromtimestamp(p[0], CT).date().isoformat()
+        nxt = (pts[i + 1] if i + 1 < len(pts) else None)
+        if nxt is None or datetime.datetime.fromtimestamp(nxt[0], CT).date().isoformat() != dd:
+            by_day.append(dict(day=dd, pnl=round(p[1] - prev, 2), end=round(p[1], 2), n=days[dd][0], won=days[dd][1])); prev = p[1]
+    dp = bk.get("daily_pnl") or {}
+    for r in by_day: r["bankroll_json_pnl"] = _num(dp.get(r["day"]))
+    streak = 0
+    for r in reversed([r for r in by_day if r["day"] < today]):
+        if r["pnl"] > 0: streak += 1
+        else: break
+    br = _num(bk.get("bankroll")); lb = _num(l2.get("bankroll_usd"))
+    tday = next((r for r in by_day if r["day"] == today), None)
+    step = max(1, len(pts or []) // 400)
+    spark = [[p[0], p[1]] for p in (pts or [])[::step]] + ([[pts[-1][0], pts[-1][1]]] if pts and (len(pts) - 1) % step else [])
+    return dict(bankroll=br, start=START, pnl=round(br - START, 2) if br is not None else None, bet=_num(bk.get("bet_usd")),
+                peak=_num(bk.get("peak")), updated_at=bk.get("updated_at"), today=today,
+                today_pnl=tday["pnl"] if tday else 0.0, today_n=tday["n"] if tday else 0, today_won=tday["won"] if tday else 0,
+                windows=l2.get("windows"), won=l2.get("won"), risk_ledger_bankroll=lb,
+                match=(abs(br - lb) <= 0.05) if br is not None and lb is not None else None,
+                history_end=pts[-1][1] if pts else None, points=len(pts or []), green_streak=streak,
+                by_day=by_day, spark=spark)
