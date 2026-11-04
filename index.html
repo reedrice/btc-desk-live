@@ -97,7 +97,11 @@ section.cmp .pmc .pm-cv{height:130px}
 .wallet-panel .we-note{margin:6px 0 0;font-size:10px;color:#a0a0b7}
 @media(max-width:520px){.wallet-panel{padding:10px}.wallet-panel .we-status{font-size:9px}.wallet-panel h3{font-size:11px}.wallet-panel dl{grid-template-columns:1fr}.wallet-panel dd{text-align:left;margin-bottom:4px}}
 /* WALLET PANELS V1 END */
-</style></head><body>
+</style><!-- Pair experiment cards retained; visibility only. -->
+<style id="pair-panel-visibility-v1">
+.plc, .smc[data-acc="pairlock"] { display: none !important; }
+</style>
+</head><body>
 <div id="top"><span>GRAPH <b id="gname">chief-night-01</b></span><span>NODES <b id="nN">—</b></span><span>EDGES <b id="nE">—</b></span><span>WORKERS <b id="nW">—</b></span><span class="lv">\ LIVE</span>
 <span class="mid">▣ GROK BOT / CHIEF</span><span class="tg"><button data-m="5m">5m</button><button data-m="15m">15m</button><button data-m="both">both</button></span>
 <span>NIGHT <b>1</b></span><b id="clock">—</b><b id="frm">0000</b></div>
