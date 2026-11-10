@@ -1,22 +1,77 @@
-# BTC Desk Live — handoff
+# BTC Desk Live handoff
 
-Static copy of the neon BTC desk dashboard (5m / 15m / both) served by GitHub Pages, fed live by an encrypted relay.
+Static BTC desk dashboard (5m / 15m / both), plus a read-only payload builder and encrypted relay.
 
-## How it works
-- **Page:** `index.html` = `/workspace/btc5m-dashboard/index_neon.html` with the `/api/neon` fetch swapped for `liveGet()`. Animations run client-side; 5m and 15m TOTALs stay separate.
-- **Relay (default): Firebase Realtime Database** `https://btc-desk-live-default-rtdb.firebaseio.com/live.json`. Rules: everything denied except public read of `/live`; writes need the legacy DB secret.
-- **Pusher:** `pusher.py` every ~2.5 s builds `neon_api.build_neon('5m'|'15m')`, gzips, encrypts AES-256-GCM (PBKDF2-SHA256 200k, random salt) and PUTs `/live.json?auth=…` only when the data changed.
-- **Reading:** page opens an EventSource on `/live.json` (Firebase REST streaming, `put` events) and falls back to polling every 3 s if the stream has been silent >20 s. Decrypts with WebCrypto; passphrase prompted once, kept in localStorage (`btcdesk_pw`). "data Ns old" bottom-left.
-- **Gist fallback (off):** `USE_GIST=1` makes pusher write the old secret gist instead (30 s, GitHub secondary-limits after ~95 edits at 8 s). Page constant `GIST_FALLBACK` is kept but unused.
-- **Box files (not in repo):** `.passphrase`, `.firebase_secret`, `.gist_id` (all chmod 600 / gitignored), `pusher.log`, `watchdog.sh`, `watchdog.pid`, `pusher.pid`.
+## Source review: 2026-11-10
 
-## Limits
-- Blob ~3.4 KB per update; each open device receives every update (~1.2 KB/s ≈ 3 GB/month if left open 24/7). Firebase free tier = 10 GB/month download, so ~3 always-open devices max; closed tabs cost nothing. Raise INTERVAL to cut it.
-- If the box is off, the page shows the last snapshot.
-- After editing index_neon.html, re-port the patch (see git history) and push to main.
+Reviewed source baseline: [`16a7821` (2026-11-04)](https://github.com/reedrice/btc-desk-live/commit/16a7821cd0fac802295da8fda6da44e5ea568b09).
+This review describes committed code, not current process health or deployed strategy settings.
 
-## Restart
-`cd /workspace/btc-desk-live && setsid nohup ./watchdog.sh >/dev/null 2>&1 < /dev/null &`
+- **Included:** `index.html`, `neon_api.py`, `pusher.py`, `watchdog.sh`, and documentation.
+- **Outside this repo:** the bots and their rules, live desk files, credentials, settlement/ledger
+  dependencies, and the complete deployment environment. This repo is not a full desk backup.
+- **Historical UI comparison:** a November 6 handoff reported that the installed dashboard matched
+  the November 4 `index.html` (SHA-256
+  `a95cb396707c1ee93417d77c94851643c79009dc8225cd5f98579f3a375f804d`).
+  That is a historical single-file match, not proof that all runtime components still match.
+- **Runtime drift is possible:** `pusher.py` prepends an external dashboard directory before
+  importing `neon_api`. A module there can take precedence over this repo's copy. Verify the
+  actual loaded module and compare each deployed file before deciding what remains to commit.
+- **Payload coverage needs checking:** `index.html` has a renderer for `wallet_experiments`,
+  but the checked-in `neon_api.build_neon()` does not emit that field. A deployed external builder
+  may supply it; the UI source alone does not verify that integration.
+- **Sizing is not fixed by this documentation:** the builder separates the 15m `bankroll_v1`
+  cohort from `legacy_14` history and reads a separate 5m desk bankroll. Confirm current rules
+  and reporting cohorts with each desk before updating operational claims.
+
+## How the committed code works
+
+- **Page:** `index.html` renders relay snapshots through `liveGet()`. The 5m and 15m totals stay
+  separate. The chart also calls Polymarket's public price, market, and midpoint endpoints.
+- **Relay:** Firebase Realtime Database is the default transport. The pusher PUTs an encrypted
+  blob to `/live.json`; the browser receives Firebase REST streaming `put` events and checks
+  every 3 seconds for a polling fallback when the stream has been silent for over 20 seconds.
+  Access rules are external configuration and were not verified by this source review.
+- **Payload:** the pusher builds both desks roughly every 2.5 seconds by default
+  (`INTERVAL` overrides it), then gzips and encrypts the payload with AES-256-GCM.
+  In Firebase mode it compares a payload hash with the last successful upload and skips equal
+  hashes. Key derivation uses PBKDF2-SHA256 with 200,000 iterations and a random salt.
+  A new IV is generated per encryption.
+- **Browser access:** WebCrypto decrypts the blob after a passphrase prompt. The passphrase is
+  stored in browser localStorage as `btcdesk_pw`; use a trusted browser profile.
+- **Gist option:** `USE_GIST=1` selects pusher output to a Gist with a 30-second default interval
+  and requires an authenticated `gh` CLI. The page's `GIST_FALLBACK` constant is unused, so
+  changing the pusher alone does not switch the reader.
+- **Watchdog:** `watchdog.sh` is tracked in this repo. It uses a lock, checks the pusher PID
+  every 20 seconds, restarts it when needed, and truncates its log above roughly 2 MB.
+  The script being present does not establish that it is currently running.
+
+## Setup dependencies and limits
+
+- Use Python 3.9+ with `cryptography` and time-zone data for `America/Chicago`.
+  The Linux watchdog needs Bash, `flock`, and GNU-style `stat`.
+- Supply compatible `settle_net` and `ledger5m` modules. Neither is included.
+  `settle_net` is imported during every payload build; `ledger5m` supports 5m bankroll history.
+- Review the hard-coded paths in the pusher, builder, and watchdog. Supply the expected desk
+  JSON/JSONL files and heartbeats before launching.
+- Configure your own Firebase URL and access rules. Keep `.passphrase`, `.firebase_secret`,
+  and `.gist_id` out of Git. The current pusher unconditionally reads all three at startup,
+  including `.gist_id` in Firebase mode and `.firebase_secret` in Gist mode.
+- Serve the page over HTTPS in a browser with WebCrypto, EventSource, and
+  `DecompressionStream('gzip')`. Enable GitHub Pages for your own fork if using that host.
+- Start the included watchdog only after adapting and validating the deployment configuration.
+  Keep credentials, desk data, logs, and runtime state private.
+- Firebase download use depends on payload size, update rate, and connected clients. Measure
+  actual traffic and check the provider's current quota; the original handoff's device-count estimate was
+  not a capacity guarantee.
+- If the publisher stops, the page can retain the last snapshot. Check freshness and source
+  status separately from the fact that the page loads.
+
+## Historical notes retained below
+
+The following October 28 notes describe earlier work. They are not a complete changelog, current
+operating instructions, proof of active services, or current strategy settings. Later changes
+are recorded in Git history. No runtime or service changes were made for this documentation update.
 
 ## v9 (2026-10-28) — one mascot per bot card
 Old mascots were 3 blobs at hard-coded stage pixel coords (600,120 / 870,130 / 900,410), so only some cards looked "owned" and tracker/risk/your_call had none. Now `build()` docks a small bobbing blob inside each card's title bar via `MASCOT` (tracker teal, analyst pink, predictor purple, risk gold, your_call blue, pipeline orange). Lives inside the card → no overflow; works in 5m and 15m. The white carrier blob is unchanged.
